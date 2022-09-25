@@ -104,5 +104,5 @@ theme: tree
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: git
-  remp: git@gitee.com:lorand/lorand.git
+  repo: git@gitee.com:lorand/lorand.git
   branch: master
