@@ -1,0 +1,11 @@
+{
+    "CodeCheck.RealTimeCodeMarsCheck.Enable": false,
+    "CodeCheck.AllRelatedRemoteBranch": "",
+    "CodeCheck.TaskIdsUpdateTime": "2022-09-25 19:32:03",
+    "CodeCheck.TaskIdsForRemoteUrl": "https://gitee.com/lorand/lorand.git",
+    "CodeCheck.TaskIdsForRemoteBranch": "",
+    "CodeCheck.TaskIds": "",
+    "CodeCheck.SubRepoTaskIdsInfo": {},
+    "CodeCheck.RelatedRemoteRepo": "https://gitee.com/lorand/lorand.git",
+    "CodeCheck.RelatedRemoteBranch": ""
+}
