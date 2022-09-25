@@ -2,9 +2,9 @@
 title: 搭建博客
 date: 2022-09-25 16:03:37
 categories:
-    - 其他
+    - 数据库
 tags:
-    - 博客
+    - postgresql
 ---
 
 参考：https://yushuaige.github.io/2021/01/02/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%85%8D%E8%B4%B9%E6%90%AD%E5%BB%BA%E8%87%AA%E5%B7%B1%E7%9A%84%E5%8D%9A%E5%AE%A2(%E4%B8%89)%E2%80%94%E2%80%94%E5%9F%BA%E4%BA%8E%20Gitee%20pages%20%E5%BB%BA%E7%AB%99/
