@@ -3,16 +3,16 @@ title: tree
 author: 吴俊
 
 links:
-  github: https://github.com/wujun234
-  
+  github: https://gitee.com/lorand
+
 favicon: /favicon.ico
 
 # valine 
 valine:
     # 评论
-    enableComment: true 
+    enableComment: false
     # 阅读量
-    enableCounter: false
+    enableCounter: true
     # valine appID
     appID:
     # valine appKey
@@ -33,10 +33,10 @@ siteStartYear: 2019
 #   https://www.google.com/search?q=
 # homeHost：要搜索的站点域名，不配置默认取当前页面的域名
 searchEngine: https://www.google.com/search?q=
-homeHost: wujun234.github.io
+homeHost: https://lorand.gitee.io/
 
-#tags: true
-#categories: true
+tags: true
+categories: true
 
 # 左侧导航栏，用文件名还是文章名
 sidebar:
