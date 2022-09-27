@@ -44,6 +44,12 @@ something
 图片：  
 [![desc](../../1.PNG)](http://www.baidu.com "desc")
 
+引用：
+> line 1
+> line 2
+
+ada
+
 代码`func(int a, int b)`
 
 代码块：  
