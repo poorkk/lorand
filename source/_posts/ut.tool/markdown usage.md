@@ -53,11 +53,18 @@ ada
 代码`func(int a, int b)`
 
 代码块：  
+
 ```c
     def func(int a, int b)
     {
     	return 0;
     }
+```
+
+```python
+def func(a, b):
+    c = "abc"
+    return a + b
 ```
 
 表格：  
