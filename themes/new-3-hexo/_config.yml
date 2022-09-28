@@ -1,7 +1,7 @@
 version: 1.1.0
 # 你的头像url
-avatar: /img/avatar.jpg
-favicon: /img/avatar.jpg
+avatar: /img/new_avatar.jpeg
+favicon: /img/new_avatar.jpeg
 
 #如果博客放置位置不是根目录，则可以通过配置此路径解决静态文件路径错误问题
 # 比如访问地址为 yelog.org/blog 那就需要配置为 blog_path: /blog 才能正常访问
@@ -84,7 +84,7 @@ menu:
       type: 3  # 跳转类型 3：打开新的tab页
 
 # 文末声明
-article_txt: 感谢阅读！ 如有错误，欢迎指正
+article_txt: 感谢阅读！ 如有错误，欢迎指正！ 留言：https://gitee.com/lorand/lorand/issues
 
 bottom_text: ©2022-2023 lorand
 # 自定义页面最下方的站点版权信息
@@ -229,7 +229,7 @@ friends:
 
 ##########评论设置#############
 comment:
-  on: true
+  on: false
   type: gitalk  # 评论系统：gitalk、disqus、gitment、utteranc、livere,注意：使用时，在下方对应位置进行配置
   comment_count: true  # 文章标题下方显示评论数 目前仅支持 gitalk 和 disqus
   ## 使用说明 https://yelog.org//2020/05/23/3-hexo-comment/

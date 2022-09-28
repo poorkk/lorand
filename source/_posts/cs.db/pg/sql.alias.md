@@ -1,19 +1,21 @@
 ---
-title: postgresql
+title: db.pg.sql.别名的使用与约束
 date: 2022-09-25 16:03:37
 categories:
     - 数据库
-    - pg
-    - p
+    - postgresql
 tags:
     - postgresql
 ---
 
-# SQL语法：别名
+# SQL.别名
 
+**摘要**
+> 本文以实际使用为例，介绍SQL语法中别名的使用约束
+
+**目录**
 [toc]
 
----
 ## 1 介绍
 
 什么是别名：
@@ -22,8 +24,9 @@ tags:
 别名语法:
 > 表名 | 列名 | 表名.列名 [AS] 别名
 
----
-## 2 示例：
+
+## 2 示例
+
 0 建表
 ```SQL
     CREATE TABLE t1 (
@@ -100,12 +103,13 @@ tags:
         t1 tbl1;
 ```
 
-7 总结：
+7 总结
 > - 别名处理顺序：先处理FROM子句，再处理TARGET子句
 > - 别名嵌套：可在别名上取别名
 
----
+
 ## 3 复杂场景
+
 0 建表
 ```SQL
     DROP TABLE t1;
@@ -215,13 +219,12 @@ tags:
     ;
 ```
 
-5 语法解析
+4 语法解析
 解析结果：
-![语法解析结果](./alias.parse.PNG)
 方式二  
 {% asset_img alias.parse.PNG %}
 
-4 总结：
+5 总结
 > - 表别名强约束，列别名弱约束
 > - 多表查询时，列名无冲突时，可直接使用列名
 > - 别名处理顺序：FROM (alias) -> TARGET -> JOIN -> GROUP BY -> ORDER BY 
