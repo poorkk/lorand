@@ -256,7 +256,7 @@ right-top-height = 45px
           /* content "\e901" */
           position absolute
           top 7px
-          left 12px
+          left 10px /* 12->10 */
           z-index 1
           /* font-size 18px */
           /* color #309E85  左箭头 */
@@ -264,8 +264,12 @@ right-top-height = 45px
           color #a0a0a0
         &#top:before
           content "\f08d"
-        &.hover:before
+        &.hover:before /* 左箭头，略过，颜色 */
           animation wobble 1s linear
+          color red /* sk */
+        &.active /* sk: not used */
+          color red
+          box-shadow inset 165px 0 0.09px #ddd
         .post-title
           width: -webkit-calc(100% - 155px)
           width: -moz-calc(100% - 155px)
@@ -273,7 +277,7 @@ right-top-height = 45px
           float left
           clear both
           margin 5px 0
-          padding-left 32px
+          padding-left 20px /* sk: 32->20 */
           font-size 16px
           line-height 22px
           white-space nowrap

@@ -3,11 +3,15 @@ title: postgresql
 date: 2022-09-25 16:03:37
 categories:
     - 数据库
+    - pg
+    - p
 tags:
     - postgresql
 ---
 
 # SQL语法：别名
+
+[toc]
 
 ---
 ## 1 介绍

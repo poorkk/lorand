@@ -32,7 +32,7 @@
            data-tag="<% post.tags.forEach(function(tag, i){ %><%=tag.name%><% if (i+1<post.tags.length){%>,<%}})%>"
            data-author="<% if(theme.author && theme.author.on==true && post.author) {%><%=post.author %><%}%>" >
             <span class="post-title" title="<%=post.title %>"><%=post.title %></span>
-            <span class="post-date" title="<%= date(post.date, 'YYYY-MM-DD HH:mm:ss')%>"><%= date(post.date, 'YYYY/MM/DD') %></span>
+            <span class="post-date" title="<%= date(post.date, 'YYYY-MM-DD HH:mm:ss')%>"><%= date(post.date, 'YY.MM.DD') %></span>
         </a>
         <% }) %>
         <div id="no-item-tips">

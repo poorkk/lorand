@@ -1,5 +1,5 @@
 .nav-left
-  width 120px
+  width 180px /* sk: 180->200 not used */
   height 100%
   /* background #2A2935 */
   background white
@@ -28,7 +28,7 @@
     text-align center
     height 27px
     /* color white */
-    color black
+    color green
   .more-menus
     display: none
   .icon
@@ -40,32 +40,41 @@
       line-height 19px
       &:hover
         color #309e85
+      background #000000 /* sk */
 
   ul
     margin 0
     padding 0
-    font-size 17px
+    font-size 15px /* 17->15 */
+    font-weight bold /* sk */
     /* border-top 1px solid #fff */
     border-top 1px solid #aaa
     list-style none
     overflow-y auto
     &.sub
       transition height .3s, border-top .3s
-      border-left: solid 2px red;
+      /* border-left: solid 2px red; */
+      border-left: solid 0px #aaa;
       overflow-y hidden
+      text-align left /* sk */
+      padding 0 1px /* sk */
       &.hide
         height 0 !important
         border-top hidden
       li
         line-height 25px
         font-size 14px
+        text-align left /* sk */
+        padding-left 10px /* sk */
         &:last-child
           border-bottom hidden
         &>div
           height 25px
     li
       line-height 40px
-      text-align center
+      text-align left /* sk */
+      padding-left 10px /* sk */
+      /* text-align center */
       /* border-bottom 1px solid #fff */
       border-bottom 1px solid #aaa
       cursor pointer
@@ -79,20 +88,23 @@
         overflow hidden
         &:hover
           /* color #f7f7f7 */
-          color yellow
+          color #800000
           box-shadow inset 6px 0 0.09px #fff
         &.active
           /* color #020202 */
-          color red
+          color #800000
           /* box-shadow inset 165px 0 0.09px #fff */
-          box-shadow inset 165px 0 0.09px #ddd
+          box-shadow inset 180px 0 0.09px #ddd
         &>.fold
-          left: 4px
-          font-size 0.7em
-          position: absolute
+          /* left: 4px */
+          text-align left
+          padding-left 1px
+          font-size 0.6em
+          /*position: absolute*/
           transition transform .3s
           &.unfold
             transform: rotate(90deg)
+
 
   .left-bottom
     position absolute
@@ -101,14 +113,15 @@
     bottom 0
     width 100%
     font-size 0
-    color rgba(255,255,255,0.7)
+    /* color rgba(255,255,255,0.7) */
+    color green
     a
       font-size 17px
       display table-cell
       height 30px
       text-align center
       vertical-align middle
-      border-top 1px solid #fff
+      border-top 1px solid #aaa /* fff->aaa */
       width 100%
       line-height 30px
       &.about
