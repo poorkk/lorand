@@ -1,11 +1,10 @@
 right-top-height = 45px
 .nav-right
-  width 400px
+  width 420px
   height 100%
-  background #fffdfd
-  /* box-shadow: 10px 10px 5px #888888 */
-  border 1px solid #ff0000
+  background white
   border-right 1px solid #e5e8ec
+  box-shadow inset -15px 0 1px -15px #222 /* sk */
   overflow hidden
   float left
   position relative
@@ -15,7 +14,7 @@ right-top-height = 45px
   -o-user-select none
   user-select none
   .title-list
-    margin-left 2px
+    margin-left 0
     transition margin-left .5s
     &.friend
       margin-left 421px
@@ -250,15 +249,19 @@ right-top-height = 45px
         display block
         height 32px
         color  inherit
+        box-shadow inset 0 0 0.09px #444 /* sk : title line */
         position relative
         &:before
-          content "\e901"
+          content "-"
+          /* content "\e901" */
           position absolute
           top 7px
           left 12px
           z-index 1
-          font-size 18px
-          color #309E85
+          /* font-size 18px */
+          /* color #309E85  左箭头 */
+          font-size 12 px
+          color #a0a0a0
         &#top:before
           content "\f08d"
         &.hover:before
@@ -276,17 +279,17 @@ right-top-height = 45px
           white-space nowrap
           text-decoration none
           text-overflow ellipsis
-          /* color #55606F not used */
-          color #ff0000
+          color #55606F
           overflow hidden
           outline none
           .search-keyword
             color red
             font-style normal
         .post-date
-          font-size 1px
-          margin 1px 0
-          padding-right 1px
+          /* font-size 15px */
+          font-size 5px
+          margin 8px 0
+          padding-right 3px
           color #9aa4af
           float right
   .friends-area
