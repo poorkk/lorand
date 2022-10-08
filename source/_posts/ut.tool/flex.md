@@ -87,6 +87,7 @@ a* | a, aa, aaa, ... | 任意重复字符,零个或多个 | | a,aa,baab : -,-,b-
 a+ | a, aa, aaa, ... | 任意重复字符，一个或多个 | | a,aa,baab : -,-,b-b
 r{3, 4} | aaa,aaaa | 指定重复字符 | | aa,aaa,aaaaa : aa,-,-a
 r{3, } | aaa, ... | 指定重复字符，大于3个 | | aa,aaa,aaaaa : aa,-,-
+
 **字符连接**
 模式 | 解释 | 示例 rule {printf("-");} |
 -|-|-|
@@ -95,6 +96,7 @@ a\|bc | 并联 | a,abc,bc,bcd : -,--,-,-d
 a/b | 以b结尾，保留b | a,b,ab,acb : a,b,-b,acb
 ab(cd)* | 优先级 | ab,abcd,abcdcd,abccd : -,-,-,-ccd
 [a-d]{-}[cd] | 集合相减 | a,b,c,d : -,-,c,d
+
 **其他实例**
 模式 | 合法集 | 示例 rule {printf("-");} |
 -|-|-|
@@ -103,34 +105,32 @@ ab+ | ab,abb| 任意重复字符
 
 **5 规则执行流程**
 - 顺序执行，满足即停
->[ab] {printf("-")}
-. []
-结果：
-a,b,c,d : --
+>[ab] {printf("-")}  
+. []  
+结果：  
+a,b,c,d : --  
 - 顺序执行，满足不停 REJECT
-> [ab] {printf("-"); REJECT}
-. {printf("+");}
-结果：
-a,b,c : -++-+++
+> [ab] {printf("-"); REJECT}  
+. {printf("+");}  
+结果：  
+a,b,c : -++-+++  
 - 条件执行 BEGIN(usestate) BEGIN(INITIAL)
-> %s state1
-> /* 也可以是： %x state1，如此，state1将变成一个整数 */
->
-> %%
-> s1 BEGIN(state1);
-> <state1>[ab] printf("+");
-> [ab] printf("-");
-> e1 BEGIN(INITIAL);
-> %%
->
-> 结果：
-> a s1 a e1 a : - + -
+> %s state1  
+> /* 也可以是： %x state1，如此，state1将变成一个整数 */  
+>  
+> %%  
+> s1 BEGIN(state1);  
+> <state1>[ab] printf("+");  
+> [ab] printf("-");  
+> e1 BEGIN(INITIAL);  
+> %%  
+>  
+> 结果：  
+> a s1 a e1 a : - + -  
 
 
 
 # 参考：
-flex输入：
-https://www.itranslater.com/qa/details/2582515546449249280
 flex使用：
 https://zhuanlan.zhihu.com/p/108167693
 
