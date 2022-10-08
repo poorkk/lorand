@@ -11,17 +11,18 @@ tags:
 # 源码安装postgresql
 
 **摘要**
-> 本文介绍，在MacOS操作系统中，如何基于VwWare虚拟机，搭建Linux环境，并在Linux中通过源码编译postgreSQL
+> 本文介绍，在MacOS操作系统中，如何使用云服务器中的Linux操作系统，搭建postgreSQL源码编译与学习环境。
 
 **目录**
 [toc]
 
 # 1 背景
 ## 1.1 问题
-在macOS中，下载并配置postgreSQL依赖的开源组件时，频繁碰壁.遂决定租一台云服务主机，编译并运行postgreSQL，以达到学习的目的
+在macOS中，下载并配置postgreSQL依赖的开源组件时，频繁碰壁。遂决定租一台云服务主机，编译并运行postgreSQL。
 
-## 1.2 云服务
-| 云服务商 | 0元试用 | 条件 | 最低配置年费 |
+## 1.2 调研云服务商
+国内运服务商众多，优惠条件各不相同。在简单调查后，选择价格较低者。
+| 云服务商 | 0元试用 | 条件 | 最低配置价格 |
 |-|-|-|-|
 | 阿里云 | 有 | 仅新用户有一次机会 | 1core 2g 24/3mon |
 | 华为云 | 有 | 每日9.30开抢 |  |
@@ -32,85 +33,116 @@ tags:
 | 百度云 | 无 | 无 | 1core 1g 34/mon |
 | 浪潮云 | 无 | 无 | 垃圾 |
 
-## 1.3 阿里云
-使用centOS 7.6主机
-需先更改root密码
-使用命令行
+## 1.3 选择云服务器
+1. 选择购买低价阿里云云服务器
+2. 在安装操作系统时，选择centOS 7.6
+3. 更改或设置root密码，用于ssh登录
+4. 在个人电脑上，使用命令行连接远程主机
+```shell
 ssh root@ip
+```
 
+## 1.4 配置云服务器
+1. 安装git
+```shell
 yum install git
+```
 
-创建新用户
+2. 创建新用户
+```shell
 useradd lorand
 passwd lorand
-gauss@123
-
+```
+在个人电脑上，进行测试：
+```shell
 ssh lorand@{IP}
+```
 
-安装code-server
--- fail
+3. 安装code-server
+忽略两次失败尝试：
+```shell
+# fail
 https://cloud.tencent.com/developer/article/1655175
 
--- fail
+# fail
 git clone https://gitee.com/mirrors/code-server.git
 https://gitee.com/mirrors/code-server?_from=gitee_search
 curl -fsSL https://code-server.dev/install.sh | sh
+```
+接下来，是成功尝试
+> 参考：https://zhuanlan.zhihu.com/p/493434939  
 
+首先，将安装包下载到个人电脑
+> https://link.zhihu.com/?target=https%3A//github.com/coder/code-server/releases/download/v4.2.0/code-server_4.2.0_amd64.deb
 
--- succeed https://zhuanlan.zhihu.com/p/493434939
-https://link.zhihu.com/?target=https%3A//github.com/coder/code-server/releases/download/v4.2.0/code-server_4.2.0_amd64.deb
-
+然后，将安装包上传到云服务器：
+```shell
 scp ./code-server_4.2.0_amd64.deb lorand@182.92.66.91:~
-
+```
+最后，在云服务器上，使用root角色进行安装
+```shell
 su
 yum install dpkg
 dpkg -i code-server_4.2.0_amd64.deb
-
 exit
+```
+
+4. 运行code-server
+配置端口号
+```shell
 vi ~/.config/code-server/config.yaml
-bind-addr: 0.0.0.0:3000
-
+# bind-addr: 0.0.0.0:3000
+```
+运行
+```shell
 code-server 或 nohup code-server &
-
-浏览器：182.92.66.91：3000
-
-在”网络与安全“->"安全组"中，新增防火墙规则，目的端口：3000，允许连接
-
+```
+在个人电脑上，使用浏览器，连接code-server
+```url
 182.92.66.91：3000
+```
+但是，由于云服务器有防火墙，到这步应该连接失败。还需要最后一步。
 
+5. 配置云服务防火墙
+在阿里云控制台，”网络与安全“->"安全组"中，新增防火墙规则：目的端口：3000，允许连接
 
-## 2 下载postgreSQL源码
+6. 最终效果：
+{% asset_img install.codeserver.png %}
+
+# 2 下载postgreSQL源码
+参考另一篇编译安装postgreSQL的博客，本部分不再赘述。
+```shell
 su
 yum install -y readline readline-devel openssl openssl-devel zlib zlib-devel bison bison-devel flex flex-devel
-
 exit
+
 git clone https://gitee.com/lorand/postgresql_9.2.4.git
 
 echo 'export BUILD_ROOT=`pwd`' > pgenv
 echo 'export PG_HOME=$BUILD_ROOT/install' >> pgenv
 echo 'export PATH="$PG_HOME/bin:$PATH"' >> pgenv
-
-```bash
 source pgenv
-cd postgresql-9.2.4
+cd postgresql_9.2.4
 ./configure --prefix=$PG_HOME --enable-debug
 make install -sj
 mkdir $PG_HOME/log && touch $PG_HOME/log/server.log
+
 initdb -D $PG_HOME/data
 pg_ctl -D $PG_HOME/data/ -l $PG_HOME/log/server.log start
 ps ux | grep bin/postgres
 
 psql -d postgres
-CREATE USER pglorand WITH PASSWORD 'gauss@123';
+# CREATE USER pglorand WITH PASSWORD 'gauss@123';
 
-新增安全组：目的端口：5432
+# 在阿里云控制台，新增安全组：目的端口：5432
 
 vi pg_hba.conf
-host all all 0.0.0.0/0 trust
+# host all all 0.0.0.0/0 trust
 vi postgres.conf
-listen_addresses = ’*‘
+# listen_addresses = ’*‘
 
 psql -d postgres -U pglorand
 ```
 
+另外，还可在个人电脑上，连接远程postgreSQL服务器，效果：
 {% asset_img install.succeed.png %}
