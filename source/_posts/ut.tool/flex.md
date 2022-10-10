@@ -69,7 +69,7 @@ void usercode()
 
 **4 正则表达式**
 **单字符**
-模式 | 合法集 | 解释 | 公式 | 示例 rule {printf("-");} |
+模式 | 示例 | 解释 | 公式 | 示例 rule {printf("-");} |
 -|-|-|-|-|
 a | a | 相等字符 | $ = a | abac : -b-c
 .| 任意字符 | 任意字符，除换行符 | $ != \n | abc : ---
@@ -81,7 +81,7 @@ a | a | 相等字符 | $ = a | abac : -b-c
 a? | a | 是否存在，存在于不存在 | | a,aa,baac : -,--,b--c
 
 **重复多字符**
-模式 | 合法集 | 解释 | 公式 | 示例 rule {printf("-");} |
+模式 | 示例 | 解释 | 公式 | 示例 rule {printf("-");} |
 -|-|-|-|-|
 a* | a, aa, aaa, ... | 任意重复字符,零个或多个 | | a,aa,baab : -,-,b-b
 a+ | a, aa, aaa, ... | 任意重复字符，一个或多个 | | a,aa,baab : -,-,b-b
@@ -98,7 +98,7 @@ ab(cd)* | 优先级 | ab,abcd,abcdcd,abccd : -,-,-,-ccd
 [a-d]{-}[cd] | 集合相减 | a,b,c,d : -,-,c,d
 
 **其他实例**
-模式 | 合法集 | 示例 rule {printf("-");} |
+模式 | 示例 | 示例 rule {printf("-");} |
 -|-|-|
 ab* | a,ab,abb | 任意重复字符
 ab+ | ab,abb| 任意重复字符 
@@ -132,6 +132,6 @@ a,b,c : -++-+++
 
 # 参考：
 flex使用：
-
+https://zhuanlan.zhihu.com/p/108167693
 
 
