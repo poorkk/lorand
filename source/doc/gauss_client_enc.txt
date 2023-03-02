@@ -1,0 +1,41 @@
+一 密钥管理模型
+    - CMK 加密 CEK
+    - CEK 加密 表中列数据
+    其中，CMK存储在客户端，CEK的密文存储在服务端。由于数据库客户端不具备存储能力，所以，由外部密钥管理者提供对CMK密钥实体的管理
+    目前，在openGauss中，仅支持以简单的文件形式管理CMK密钥实体我们叫localkms。其他诸如密钥管理工具：gs_ktool、密钥管理服务：华为云KMS等，在openGauss中暂不支持
+
+二 openGauss全密态使用过程
+1 编译并安装openGausss
+2 配置环境变量，启动数据库服务器
+2 额外配置：存储CMK密钥实体文件的路径：$LOCALKMS_FILE_PATH（随便设置个路径就行）
+3 使用gsql连接数据库：gsql -d ... (省略) -C (一定要带-C参数)
+4 在gsql中使用如下语法：
+   CREATE CLIENT MASTER KEY cmk1 WITH (KEY_STORE = localkms, KEY_PATH = "keyfile1", ALGORITHM = RSA_2048);
+   CREATE COLUMN ENCRYPTION KEY cek1 WITH VALUES (CLIENT_MASTER_KEY = cmk1, ALGORITHM = AEAD_AES_256_CBC_HMAC_SHA256);
+   CREATE TABLE t1 (c1 INT, c2 INT ENCRYPTED WITH (COLUMN_ENCRYPTION_KEY = cek1, ENCRYPTED_TYPE = DETERMINISTIC));
+   INSERT INTO t1 VALUES (1, 100), (2, 200);
+   SELECT * FROM t1;
+   SELECT * FROM t1 WHERE c2 = 100; -- 密态等值查询
+   SELECT * FROM t1 WHERE c2 > 100; -- 报错，暂不支持密态范围查询
+
+三 代码
+1 opengauss 源码：https://gitee.com/opengauss/openGauss-server
+2 全密态数据库 
+    - 加解密模块：https://gitee.com/opengauss/openGauss-server/tree/master/src/common/interfaces/libpq/client_logic_hooks/encryption_hooks
+    - CMK管理模块：https://gitee.com/opengauss/openGauss-server/tree/master/src/common/interfaces/libpq/client_logic_hooks/cmk_entity_manager_hooks
+    其中，该路径下：
+        - reg_hook_frame.h 文件中，有4个回调函数，用于从外部密钥管理者中读取CMK实体信息，以及加解密CEK
+	1 typedef ProcessPolicy (*CreateCmkObjectHookFunc)(CmkIdentity *cmk_identity);
+	2 typedef ProcessPolicy (*EncryptCekPlainHookFunc)(CmkemUStr *cek_plain, CmkIdentity *cmk_identity, CmkemUStr **cek_cipher);
+	3 typedef ProcessPolicy (*DecryptCekCipherHookFunc)(CmkemUStr *cek_cipher, CmkIdentity *cmk_identity, CmkemUStr **cek_plain);
+	4 typedef ProcessPolicy (*DropCmKObjectHookFunc)(CmkIdentity *cmk_identity);
+           上述4个函数，分别在处理如下语法时调用：
+	1 CREATE CLIENT MASTER KEY ...
+	2 CREATE COLUMN ENTRYPTION KEY ...
+	3 INSERT/UPDATE/SELECT encrypted_column ...
+	4 DROP CLIENT MASTER KEY ...
+        -  register_local_kms.cpp  -> 简单的密钥文件管理方式
+	可以看这个函数 reg_cmke_manager_local_kms_main()中，如何注册回调函数的
+        - register_gs_ktool.cpp -> 密钥管理工具，但在opengauss中不支持
+	或者看这个函数也行 reg_cmke_manager_gs_ktool_main()
+        - register_huawei_kms.cpp -> 华为云密钥管理服务，但在opengauss中不支持

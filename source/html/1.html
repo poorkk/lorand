@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>菜鸟教程(runoob.com)</title>
+    </head>
+    <hr>
+    <body>
+        <h1>我的第一个标题</h1>
+        <p>我的第一个段落。</p>
+        <hr>
+        
+        <h4>一行三列:</h4>
+        <table border="1">
+            <tr>
+                <td>100</td>
+                <td>200</td>
+                <td>300</td>
+                <input type="text" name="user"><br>
+            </tr>
+        </table>
+        <hr>
+
+        <form action="">
+            Username: <input type="text" name="user"><br>
+            Password: <input type="password" name="password">
+        </form>
+        <hr>
+
+        <script>
+            document.write("Hello World!")
+            document.write("<p>这是一个段落。</p>");
+        </script>
+
+        <a id="tips">提示部分</a>
+        <a href="#tips">跳到提示部分</a>
+        </body>
+        <hr>
+
+        <table border="1">
+            <tr>
+              <th>表格标题</th>
+              <th>表格标题</th>
+            </tr>
+            <tr>
+              <td>r1c1</td>
+              <td>r1c2</td>
+            </tr>
+        </table>
+        <hr>
+
+        <canvas id="myCanvas" width="200" height="100"
+            style="border:1px solid #000000;">
+        </canvas>
+        <hr>
+
+        选择你喜欢的颜色: <input type="color" name="favcolor">
+        生日 (日期和时间): <input type="datetime-local" name="bdaytime">
+        <hr>
+
+        <video width="320" height="240" controls>
+            <source src="movie.mp4" type="video/mp4">
+            <source src="movie.ogg" type="video/ogg">
+          您的浏览器不支持Video标签。
+        </video>
+        <hr>
+
+        <embed height="50" width="100" src="horse.mp3">
+        <hr>
+
+        <button type="button" onclick="alert('欢迎!')">点我!</button>
+        <hr>
+
+        <script>
+            function input_to_txt()
+            {
+                e = document.getElementById('in')
+                // document.write("<h1>哈哈哈</h1>")
+                e.innerHTML = "点了";
+            }
+        </script>
+        <button type="button" onclick="input_to_txt()">点我!</button>
+</html>
