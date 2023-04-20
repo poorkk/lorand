@@ -23,11 +23,11 @@ heap_insert(rel, tup, cid) # CommandId
         lock_buffer(BUFFER_LOCK_EXCLUSIVE)
         ...
     
-    needlock = not rel_is_local(rel)
-    if needlock:
-        LockRelationForExtension(rel, ExclusiveLock)
-            LockAcquire(rel, ExclusiveLock)
-                LockAcquireExtended(rel, ExclusiveLock)
+        needlock = not rel_is_local(rel)
+        if needlock:
+            LockRelationForExtension(rel, ExclusiveLock)
+                LockAcquire(rel, ExclusiveLock)
+                    LockAcquireExtended(rel, ExclusiveLock)
 
 LockAcquireExtended(relid, mode)
     locallock = hash_search(LockMethodLocalHash, relid, enter)
@@ -87,6 +87,80 @@ ShareRowExclusiveLock | 6 | row share
 ExclusiveLock | 7 | block ROW SHARE/SELECT FOR UPDATE
 AccessExclusiveLock | 8 | ALTER TABLE/DROP TABLE/VACUUM FULL
 
-```c
+```python
+- heap_open(relid lockmode) # not index
+- relation_open(relid, lockmode) # any rel
+    LockRelationOid(relid, lockmode)
+        LockAcquire(tag, lockmode)
+    RelationIdGetRelation(relid)
+        if RelationIdCacheLookup(relationId, rd) -> hash_search(RelationIdCache)
+            RelationIncrementReferenceCount(rel)
+        else RelationBuildDesc(relid)
+            RelationIncrementReferenceCount(rel)
+- heap_close(relid, lockmode)
+- relation_close(rel, lockmode)
+    RelationClose(rel)
+        RelationDecrementReferenceCount()
+        UnlockRelationId(lockmode)
 
+heap_insert(rel, tup, cid)
+    xid = GetCurrentTransactionId()
+    tup = heap_prepare_insert() # set [ insert xid | delete xid | cmd id | ... ]
+    buf = RelationGetBufferForTuple(rel, tup.len)
+        LockRelationForExtension(rel, ExclusiveLock)
+        ReadBuffer(rel, blkno) # LWLockAcquire(bufhdr, LW_EXCLUSIVE), LockBuffer(buffer, BUFFER_LOCK_EXCLUSIVE)
+        UnlockRelationForExtension(rel, ExclusiveLock)
+    RelationPutHeapTuple(rel, buf, tup) # PageAddItem
+    /* xlog */
+    UnlockReleaseBuffer(buf)
+        LockBuffer(buf, BUFFER_LOCK_UNLOCK)
+        ReleaseBuffer(buf)
+heap_delete(rel, tid, cid, snapshot)
+    xid = GetCurrentTransactionId()
+    buf = ReadBuffer(rel, ItemPointerGetBlockNumber(tid))
+    LockBuffer(buf, BUFFER_LOCK_EXCLUSIVE)
+    ... 复杂
+    heap_acquire_tuplock(rel, tup, LockTupleExclusive, LockWaitBlock)
+    ...
+    UnlockTupleTuplock(rel, tup, LockTupleExclusive)
+heap_update(rel, okdtid, newtup, cid, snapshot, lockmode)
+```
+
+```c
+relation锁：
+
+buffer锁： call LWLockAcquire(LW_SHARED / LW_EXCLUSIVE)
+#define BUFFER_LOCK_UNLOCK		0
+#define BUFFER_LOCK_SHARE		1
+#define BUFFER_LOCK_EXCLUSIVE	2
+
+tuple锁：
+typedef enum {
+    LockTupleKeyShare, /* SELECT FOR KEY SHARE */
+    LockTupleShare, /* SELECT FOR SHARE */
+    LockTupleNoKeyExclusive, /* SELECT FOR NO KEY UPDATE, and UPDATEs that don't modify key columns */
+    LockTupleExclusive, /* SELECT FOR UPDATE, UPDATEs that modify key columns, and DELETE */
+} LockTupleMode; 映射到reguler锁 LockMode
+{
+    {AccessShareLock, MultiXactStatusForKeyShare, -1},
+    {RowShareLock, MultiXactStatusForShare, -1},
+    {ExclusiveLock, MultiXactStatusForNoKeyUpdate, MultiXactStatusNoKeyUpdate,},
+    {AccessExclusiveLock, MultiXactStatusForUpdate, MultiXactStatusUpdate}
+}
+
+LockTupleTuplock(rel, tid, lockmode)
+    LockTuple(rel, tup, tupleLockExtraInfo[lockmode])
+        LockAcquire(tag, lockmode)
+
+typedef enum
+{
+	MultiXactStatusForKeyShare = 0x00,
+	MultiXactStatusForShare = 0x01,
+	MultiXactStatusForNoKeyUpdate = 0x02,
+	MultiXactStatusForUpdate = 0x03,
+	/* an update that doesn't touch "key" columns */
+	MultiXactStatusNoKeyUpdate = 0x04,
+	/* other updates, and delete */
+	MultiXactStatusUpdate = 0x05
+} MultiXactStatus;
 ```
