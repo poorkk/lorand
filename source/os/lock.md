@@ -2,15 +2,17 @@
 
 # 1 概述
 ## 1.1 场景
-## 1.2 通信方式
+## 1.2 进程通信
 - 信号
 - 信号量 （锁）
-- 消息队列 （传递数据）
-- 管道
-- 共享内存
-- socket
+- 消息队列 （传递数据 + 阻塞）
+- 管道 （传递数据 + 阻塞）
+- 共享内存 （传递数据 + 阻塞）
+- 套接字 （传递数据 + 阻塞）
+## 1.3 线程通信
 
-# 2 使用方法
+
+# 2 进程通信
 ## 2.1 代码
 ### 信号 
 ```c
@@ -30,7 +32,7 @@ int sem_destroy(sem_t *sem);
 int sem_wait(sem_t *sem);
 // 解锁
 int sem_post(sem_t *sem);
-// 有名信号量
+// 创建 （有名信号量）
 sem_t *sem_open(const char *name, int flag);
 int sem_close(sem_t *sem);
 int sem_unlink(const char *name);
@@ -40,7 +42,7 @@ int sem_timewait(sem_t *sem);
 ```
 ### 消息队列
 ```c
-// 初始化
+// 创建
 int msgget(key_t key, int msgflg); /* flag: 访问权限 */
 key_t ftok(const char *pathname int projid);
 // 发送
@@ -52,10 +54,33 @@ msgctl(int msqid, int cmd, struct msqid_ds *buf);
 ```
 ### 管道
 ```c
+// 创建（匿名管道）
+int pipe(inf fd[2]); /* 0读1写 */
+// 关闭
+void close(int fd);
+// 发送
+int write(int fd, void *data, size_t datasz);
+// 接收
+int read(int fd, void *data, size_t datasz); /* 阻塞 */
+// 创建 （命名管道: 对应真实文件） + open()
+int mkfifo(const char *file, mode_t mode);
+int mknode(const char *path, mode_t mode, dev_t device_type); /* 较老 */
 ```
+### 共享内存
+```c
+
+```
+
+### 套接字
 
 ## 2.2 命令
 ```bash
 # 信号: 查看
 kill -l
+
+# 命名管道
+mkfifo FILE
+mkfifo FILE p
 ```
+
+# 3 
