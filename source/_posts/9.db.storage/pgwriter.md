@@ -1,3 +1,11 @@
+---
+title: 存储引擎 bgwriter
+date: 2022-09-25 16:03:37
+categories:
+    - 存储引擎
+tags:
+    - 存储引擎
+---
 
 初始化Buffer池
 ```c

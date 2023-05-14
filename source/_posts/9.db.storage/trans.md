@@ -1,3 +1,12 @@
+---
+title: 存储引擎 事务
+date: 2022-09-25 16:03:37
+categories:
+    - 存储引擎
+tags:
+    - 存储引擎
+---
+
 ```python
 heap_insert(rel, tup, cid) # CommandId
     xid = get_cur_trans_id()

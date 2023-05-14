@@ -1,9 +1,8 @@
 ---
-title: db.pg.源码安装postgreSQL
+title: 数据库 0 源码安装postgresql (linux)
 date: 2022-09-25 16:03:37
 categories:
     - 数据库
-    - postgresql
 tags:
     - postgresql
 ---

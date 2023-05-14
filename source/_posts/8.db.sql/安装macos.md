@@ -1,9 +1,8 @@
 ---
-title: db.pg.源码安装postgreSQL mac
+title: 数据库 1 源码安装postgresql (macos)
 date: 2022-09-25 16:03:37
 categories:
     - 数据库
-    - postgresql
 tags:
     - postgresql
 ---
