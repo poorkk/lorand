@@ -84,13 +84,128 @@ typedef struct {
 #define XLR_BLOCK_ID_DATA_SHORT		255
 #define XLR_BLOCK_ID_DATA_LONG		254
 #define XLR_BLOCK_ID_ORIGIN			253
+
 ```
 
 ## 1.2 插入顺序
-heap_insert场景
 ```c
 XLogBeginInsert() /* 检查受否在故障恢复 */
 XLogRegisterData(data, datasz) /*  */
 XLogRecPtr XLogInsert(RmgrId rmid, uint8 info)
 XLogFlush(XLogRecPtr record)
+```
+heap_insert
+```c
+/* 结构体：输入 */
+typedef struct {
+    uint32 t_len;
+    ItemPointerData t_self;
+    Oid t_tableOid;
+    HeapTupleHeader t_data;
+} HeapTuple;
+
+/* 输出 */
+typedef struct {
+    OffsetNumber offnum;
+    uint8        flags;
+} xl_heap_insert;
+
+typedef struct {
+    uint16 t_infomask2;
+    uint16 t_infomask
+    uint8  t_hoff;
+} xl_heap_header;
+
+/* 执行流程 */
+HeapTuple tup;
+
+xl_heap_insert xlrec;
+xl_heap_header xlhdr;
+uint8 info = XLOG_HEAP_INSERT;
+int bufflags = 0;
+XLogRecPtr recptr;
+
+xlrec.offnum = tup.t_self.offset;
+xlrec.flag = 0; /* if page XLH_INSERT_ALL_VISIBLE_CLEARED XLH_INSERT_IS_SPECULATIVE */
+
+xlhdr.t_infomask2 = tup->t_data->t_infomask2;
+xlhdr.t_infomask = tup->t_data->t_infomask;
+xlhdr.t_hoff = tup->t_data->t_hoff;
+
+XLogBeginInsert()
+/* put tup place */
+XLogRegisterData(&xlrec, sizeof(xlrec));
+/* put buffer where tup come from */
+XLogRegisterBuffer(0, buffer, bufflags | REGBUF_STANDARD);
+/* put tup */
+XLogRegisterBufData(0, &xlhdr, sizeof(xlhdr));
+XLogRegisterBufData(0, tup->t_data + sizeof(HeapTupleHeader), tup->t_len - sizeof(HeapTupleHeader));
+XLogIncludeOrigin();
+recptr = XLogInsert(RM_HEAP_ID, info);
+
+PageSetLSN(page, recptr);
+```
+内部实现：
+```c
+typedef struct XlogRecData {
+    struct XlogRecData *next;
+    char *data;
+    uint32 len;
+} XlogRecData;
+
+/* 进程级全局变量：
+
++-------------+-------------+-------------+
+| XLogRecData | XLogRecData | ...         |
++-------------+-------------+-------------+
+              ^ last
+*/
+
+XLogRecData *rdatas; /* XLogRecData 数组 */
+int num_rdatas;
+int max_rdatas;
+
+XLogRecData *mainrdata_head;
+XLogRecData *mainrdata_last;
+uint32 mainrdata_len; /* chain中的数据总长度 */
+
+XLogRegisterData(data, len)
+    XLogRecData *rdata = rdatas[num_rdatas++];
+    rdata->data = data;
+    rdata->len = len;
+
+    mainrdata_last->next = rdata;
+    mainrdata_last = rdata;
+    mainrdata_len += len;
+
+typedef struct {
+    bool        in_use;
+    uint8       flags;
+    RelFileNode rnode;
+    ForkNumber	forkno;
+    BlockNumber block;
+    Page		page;
+
+    uint32		rdata_len; /* total length of data in rdata chain */
+    XLogRecData *rdata_head;
+    XLogRecData *rdata_tail;
+    XLogRecData bkp_rdatas[2]; /* temporary rdatas */
+
+    char compressed_page[8192 + 4];
+} registered_buffer;
+
+/* 进程级全局变量：
+
++-------------+-------------+-------------+
+| XLogRecData | XLogRecData | ...         |
++-------------+-------------+-------------+
+
+*/
+
+registered_buffer *registered_buffers;
+int max_registered_buffers;
+int max_registered_block_id = 0;
+
+XLogRegisterBuffer(block_id, buffer, flags)
+    
 ```
