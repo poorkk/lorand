@@ -160,7 +160,7 @@ typedef struct XlogRecData {
     struct XlogRecData *next;
     char *data;
     uint32 len;
-} XlogRecData;
+} XLogRecData;
 
 /* 进程级全局变量：
 
@@ -402,13 +402,22 @@ heap_redo(XLogReaderState *record)
 
 heap_xlog_insert(XLogReaderState *record)
     XLogRecPtr	lsn = record->EndRecPtr;
-    xl_heap_insert *xlrec = (xl_heap_insert *) XLogRecGetData(record);
 
     RelFileNode target_node;
     XLogRecGetBlockTag(record, 0, &target_node, NULL, &blkno);
+
+    /*  set tup's offset */
     ItemPointerData target_tid;
     ItemPointerSetBlockNumber(&target_tid, blkno);
     ItemPointerSetOffsetNumber(&target_tid, xlrec->offnum);
 
-    ?
+    xl_heap_insert *xlrec = (xl_heap_insert *) XLogRecGetData(record);
+    if XLogRecGetInfo(record) = XLOG_HEAP_INIT_PAGE
+        buffer = XLogInitBufferForRedo(record)
+        page = BufferGetPage(buffer)
+        PageInit(page)
+    else
+        action = XLogReadBufferForRedo(record, &buffer)
+    
+    
 ```
