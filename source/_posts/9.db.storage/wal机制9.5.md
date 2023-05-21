@@ -7,13 +7,54 @@ tags:
     - 存储引擎
 ---
 
-# 1 xlog格式
-## 1.1 wal 背景
-- 功能需求：
-    - 执行事务/事务块，避免故障导致数据丢失，产生的数据写入磁盘才算事务成功
-- 性能问题：
-    - 执行事务/事务块，比如一条INSERT，除了要写数据文件，更新fsm文件，vm文件，索引文件，更新事务提交文件等
-    
+# 1 概述
+## 1.1 背景
+wal机制解决的问题：持久性、原子性、性能、数据同步、恢复
+- 持久性需求：
+    - 执行一次事务/事务块，例如INSERT语句，除了要写数据文件，还需要更新系统表、索引文件、fsm文件、vm文件、事务提交文件等
+    - 为避免故障导致数据丢失，产生的数据写入磁盘才算事务成功
+```bash
+应用                    数据库                  磁盘
+| 1. INSERT (5) -->     |
+                        | 2. 读取数据页 <--     |
+                        | 3. 将数据写入数据页
+                        | 4. 存储数据页  -->    |
+                        | 5. 读取索引文件 -->   |
+                        | 6...
+                        | 7. 读取fsm文件 -->    |
+                        | 8...
+                        | 9. 读取vm文件 -->     |
+                        | 10...
+| 11. INSERT 成功   <-- |
+```
+- 原子性需求：
+    - 大量连续读写可能会失败，如果中途失败，无法恢复现场
+- 性能需求：
+    - 首先，执行一次事务或事务块，涉及大量IO操作，且都是随机读写
+- 数据同步：
+    - 主机和备机之间数据同步问题
+- 恢复
+    - 故障恢复
+    - 时间点恢复
+
+## 1.2 解决方案
+lsn
+```sql
+-- 查看当前lsn
+SELECT pg_current_wal_lsn();
+-- 查看当前lsn的文件名
+SELECT pg_walfile_namae(pg_current_wal_lsn());
+SELECT pg_walfile_name_offset(pg_current_wal_lsn());
+-- 查看你page的lsn
+SELECT lsn FROM page_header(get_raw_page('t1', 0));
+```
+wal文件命令：24个字符，每个字符为16进制
+```c
+00000000 00000000 00000000
+ 时间线    逻辑id   物理id
+```
+http://dbaselife.com/doc/1955/
+
 
 ## 1.1 格式
 通用的xlog记录格式 (pg 9.5+)
@@ -244,15 +285,17 @@ typedef uint64 XLogRecPtr;
 XLogRecPtr RedoRecPtr;
 bool doPageWrites;
 
+/* 1 */
 XLogInsert(rmid, info)
     XLogRecPtr	fpw_lsn;
-    XLogRecData rdt = XLogRecordAssemble(rmid, info, RedoRecPtr, doPageWrites, &fpw_lsn)
-    XLogRecPtr EndPos = XLogInsertRecord(rdt, fpw_lsn);
+    XLogRecData rdt = XLogRecordAssemble(rmid, info, RedoRecPtr, doPageWrites, &fpw_lsn) /* 封装头部 */
+    XLogRecPtr EndPos = XLogInsertRecord(rdt, fpw_lsn); /* 封装数据 */
     return EndPos; /* 即 page lsn */
 
 XLogRecData hdr_rdt; /* 把所有buffer里和buffer外的所有list merge在一起 */
 char *hdr_scratch = NULL; /* 把所有buffer里和buffer外的所有数据拼接在一起 */
 
+/* 1.1 */
 XLogRecData *XLogRecordAssemble(rmid, info, RedoRecPtr, doPageWrites, fpw_lsn)
     char	   *scratch = hdr_scratch;
     XLogRecord *rechdr = (XLogRecord)scratch;
@@ -345,6 +388,7 @@ XLogRecData *XLogRecordAssemble(rmid, info, RedoRecPtr, doPageWrites, fpw_lsn)
 
     return &hdr_rdt;
 
+/* 1.2 */
 XLogRecPtr XLogInsertRecord(XLogRecData rdata, XLogRecPtr fpw_lsn)
     XLogCtlInsert *Insert = &XLogCtl->Insert;
     XLogRecord *rechdr = (XLogRecord *) rdata->data;
@@ -362,9 +406,13 @@ XLogRecPtr XLogInsertRecord(XLogRecData rdata, XLogRecPtr fpw_lsn)
     XLogRecPtr	StartPos;
     XLogRecPtr	EndPos;
     if isLogSwitch:
-        ReserveXLogSwitch(&StartPos, &EndPos, &rechdr->xl_prev)
+        insert = ReserveXLogSwitch(&StartPos, &EndPos, &rechdr->xl_prev)
     else:
         ReserveXLogInsertLocation(rechdr->xl_tot_len, &StartPos, &EndPos, &rechdr->xl_prev)
+        inserted = true
+
+    if inserted:
+        CopyXLogRecordToWAL(rechdr->xl_tot_len, isLogSwitch, rdata, StartPos, EndPos) /* 封装实际数据 */
 
     WALInsertLockRelease();
     MarkCurrentTransactionIdLoggedIfAny();
@@ -372,7 +420,7 @@ XLogRecPtr XLogInsertRecord(XLogRecData rdata, XLogRecPtr fpw_lsn)
     /* Update shared LogwrtRqst.Write, if we crossed page boundary */
     if StartPos / XLOG_BLCKSZ != EndPos / XLOG_BLCKSZ:
         if XLogCtl->LogwrtRqst.Write < EndPos:
-            XLogCtl->LogwrtRqst.Write = EndPos;
+            XLogCtl->LogwrtRqst.Write = EndPos; /* 更新所有进程的xlog写入位置 */
         LogwrtResult = XLogCtl->LogwrtResult;
     
     if isLogSwitch:
@@ -381,6 +429,34 @@ XLogRecPtr XLogInsertRecord(XLogRecData rdata, XLogRecPtr fpw_lsn)
     
     ProcLastRecPtr = StartPos;
     XactLastRecEnd = EndPos;
+
+/* 1.2.1 */
+CopyXLogRecordToWAL(int write_len, XLogRecData *rdata, XLogRecPtr StartPos, XLogRecPtr EndPos)
+    char *currpos = StartPos
+    currpos = GetXLogBuffer(CurrPos)
+    freespace = INSERT_FREESPACE(CurrPos)
+
+    while (rdata != NULL)
+        char *rdata_data = rdata->data
+        int rdata_len = rdata->len
+
+        while (rdata_len > freespace)
+            memcpy(currpos, rdata_data, freespace)
+            rdata_data += freespace
+            rdata_len -= freespace
+            written += freespace
+            CurrPos += freespace
+
+            currpos = GetXLogBuffer(CurrPos)
+            ...
+        
+        memcpy(currpos, rdata_data, rdata_len)
+        ...
+    
+    if isLogSwitch
+        while (CurrPos < EndPos)
+            WALInsertLockUpdateInsertingAt(CurrPos)
+            AdvanceXLInsertBuffer(CurrPos)
 ```
 
 # 2 xlog重放
@@ -418,6 +494,4 @@ heap_xlog_insert(XLogReaderState *record)
         PageInit(page)
     else
         action = XLogReadBufferForRedo(record, &buffer)
-    
-    
 ```
