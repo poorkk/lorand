@@ -159,6 +159,7 @@ typedef struct {
 # 2.1 模块对外接口
 ```c
 BlockNumber GetPageWithFreeSpace(Relation rel, Size spaceNeeded);
+BlockNumber RecordAndGetPageWithFreeSpace(Relation rel, BlockNumber oldPage, Size oldSpaceAvail, Size spaceNeeded)
 Size GetRecordedFreeSpace(Relation rel, BlockNumber heapBlk);
 void RecordPageWithFreeSpace(Relation rel, BlockNumber heapBlk, Size spaceAvail);
 void XLogRecordPageWithFreeSpace(RelFileNode rnode, BlockNumber heapBlk, Size spaceAvail);
@@ -195,9 +196,17 @@ Size PageGetHeapFreeSpace(Page page)
 
 ## 2.2 调用点
 ```c
-/* 查找空闲空间 GetPageWithFreeSpace */
+/* 查找空闲空间 GetPageWithFreeSpace, RecordAndGetPageWithFreeSpace */
 RelationGetBufferForTuple()
+    /* 首先，通过FSM，获取1个DataBlock */
     targetBlock = GetPageWithFreeSpace()
+    while targetBlock != InvalidBlockNumber:
+        /* 不信任fsm，判断DataBlock的空闲空闲空间是否足够 */
+        pageFreeSpace = PageGetHeapFreeSpace(page)
+        if len + saveFreeSpace > pageFreeSpace:
+            return buffer
+        /* 重新通过FSM，获取1个DataBlock */
+        targetBlock = RecordAndGetPageWithFreeSpace(relation, targetBlock, pageFreeSpace, len + saveFreeSpace)
 GetFreeIndexPage()
     BlockNumber blkno = GetPageWithFreeSpace(BLCKSZ / 2)
 
@@ -222,12 +231,13 @@ heap_xlog_multi_insert(XLogReaderState *record)
     XLogRecordPageWithFreeSpace(rnode, blkno, freespace)
 heap_xlog_update(XLogReaderState *record, bool hot_update)
     XLogRecordPageWithFreeSpace(rnode, newblk, freespace)
+
+/* 更新FSM树 FreeSpaceMapVacuum */
 ```
 
 # 2 函数
-## 2.1 FSMBlock间定位
+## 2.1 FSMBlock树 定位
 ```c
-/* 3层树结构定位 */
 FSMAddress fsm_get_location(BlockNumber heapblk, uint16 *slot)
     FSMAddress addr
     addr.level = FSM_BOTTOM_LEVEL
@@ -258,6 +268,7 @@ FSMAddress fsm_get_parent(FSMAddress child, uint16 *slot)
     parent.logpageno = child.logpageno / SlotsPerFSMPage
     *slot = child.logpageno % SlotsPerFSMPage
 
+/* FSMBlock树查找 */
 BlockNumber fsm_search(Relation rel, uint8 min_cat)
     FSMAddress addr = FSM_ROOT_ADDRESS
     uinit8 max_avail = 0
@@ -266,7 +277,7 @@ BlockNumber fsm_search(Relation rel, uint8 min_cat)
         if BufferIsValid(buf):
             LockBuffer(buf, BUFFER_LOCK_SHARE)
             /* 进行当前FSMBlock块内搜索 */
-            slot = fsm_search_avail(buf, min_cat)
+            slot = fsm_search_avail(buf, min_cat, (addr.level == FSM_BOTTOM_LEVEL))
             if slog == -1:
                 max_avail = fsm_get_max_avail(BufferGetPage(buf))
         /* 如果当前FSMBlock已找到合适的节点 */
@@ -319,7 +330,7 @@ bool fsm_set_avail(Page page, int slot, uint8 value);
 bool fsm_truncate_avail(Page page, int nslots);
 bool fsm_rebuild_page(Page page);
 
-/* FSMBlock内是大根对 */
+/* FSMBlock内查找，FSMBlock是大根对 */
 int fsm_search_avail(Buffer buf, uint8 minvalue, bool advancenext, bool exclusive_lock_held)
 restart:
     /* 先判断根节点，如果本Block内的空闲空间较小，直接返回 */
@@ -364,10 +375,8 @@ restart:
 
     /* 找到叶子节点，返回叶子节点索引 */
     slot = nodeno - NonLeafNodesPerPage
-    fsmpage->fp_next_slot = slot + (advancenext ? 1 : 0)
+    fsmpage->fp_next_slot = slot + (advancenext ? 1 : 0) /* 大部分场景下，返回的DataBlock会被插入多条数据，下一次查找FSM时，直接从下一个FSMBlock查找即可 */
     return slot
 ```
-
-
 
 - https://www.jianshu.com/p/4064dbb72414
