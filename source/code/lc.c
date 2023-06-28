@@ -1,35 +1,22 @@
----
-title: 算法 leetcode
-date: 2022-09-25 16:03:37
-categories:
-    - 算法
-tags:
-    - 算法
----
+#include <stdio.h>
+#include <string.h>
 
-[toc]
+#define SWAP(arr, i, j)      \
+    do {                     \
+        int tmp_ = arr[(i)]; \
+        arr[(i)] = arr[(j)]; \
+        arr[(j)] = tmp_;     \
+    } while (0)
+#define ARRLEN(arr) (int)(sizeof((arr))/sizeof((arr)[0]))
+void prt(int *arr, int arrlen)
+{
+    int i;
+    for (i = 0; i < arrlen; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
 
-# 1 概述
-## 1.1 分类
-- 数组
-    - 排序
-    - 滑动窗口
-    - 去重
-    - 碰撞指针：回文串
-- 链表
-    - 反转链表
-- 二叉树
-    - 递归
-- 栈
-- 队列
-
-- 动态规划
-- 背包问题
-
-# 2 数组
-## 2.1 所有0移动到数组的末尾
-> https://leetcode.cn/problems/move-zeroes/
-```c
 void move_zero(int *arr, int arrsz) // 冒泡排序
 {
     int tmp;
@@ -49,10 +36,7 @@ void move_zero(int *arr, int arrsz) // 冒泡排序
     arrsz--;
     move_zero(arr, arrsz);
 }
-```
 
-## 2.2 移除数组指定元素
-```c
 int remove_num(int *arr, int arrsz, int num) // 双指针，冒泡排序
 {
     int left;
@@ -75,10 +59,7 @@ int remove_num(int *arr, int arrsz, int num) // 双指针，冒泡排序
     }
     return arrsz - cnt;
 }
-```
 
-## 2.3 移除数组重复元素
-```c
 int remove_dumpicate(int *arr, int arrsz) // 双指针
 {
     int start;
@@ -101,10 +82,7 @@ int remove_dumpicate(int *arr, int arrsz) // 双指针
 
     return newsz;
 }
-```
 
-## 2.4 移除数组数量大于2的元素
-```c
 int remove_dumpicate2(int *arr, int arrsz) // 双指针
 {
     int start;
@@ -130,10 +108,7 @@ int remove_dumpicate2(int *arr, int arrsz) // 双指针
 
     return newsz;
 }
-```
 
-## 2.5 数组重复元素排序
-```c
 void bubble_sort(int *arr, int arrsz) // 冒泡排序
 {
     if (arrsz <= 1) {
@@ -149,34 +124,13 @@ void bubble_sort(int *arr, int arrsz) // 冒泡排序
     bubble_sort(arr, arrsz - 1);
 }
 
-void bubble_sort1(int *arr, int arrsz) // 双指针，覆盖 + 补偿
+int main()
 {
-    if (arrsz <= 1) {
-        return;
-    }
-    
-    int p0 = 0;
-    int p1 = 0;
-    int i;
-    /*
-     * 0 0 1 1 2 2 1 0 0 1
-     *   -
-     *       +
-     *             ^   
-     */
-    for (i = 0; i < arrsz - 1; i++) {
-        if (arr[i] == 0) {
+    // int *arr = nums;
+    // int arrsz = numsSize;
+    int arr[] = {2,0,2,1,1,0};
+    int arrsz = ARRLEN(arr);
 
-        }
-        if (arr[i] > arr[i + 1]) {
-            SWAP(arr, i, i + 1);
-        }
-    }
-    bubble_sort(arr, arrsz - 1);
+    bubble_sort(arr, arrsz);
+    prt(arr, arrsz);
 }
-```
-
-## 2.6
-
-# 参考
-- https://leetcode.cn/circle/article/QxxqIF/
