@@ -104,13 +104,14 @@ void sort_heap(int *arr, int len)
     int father;
     int child;
 
-    for (heapsz = 1; heapsz < len; heapsz++) {  // 自底向上，构造大顶堆
+    for (heapsz = 1; heapsz <= len; heapsz++) {  // 自底向上，构造大顶堆
         for (child = heapsz - 1, father = ROOT_NODE(child); child != 0; child = father, father = ROOT_NODE(child)) {
             if (heap[father] < heap[child]) {
                 SWAP(heap, child, father);
             }
         }
     }
+    heapsz--;
 
 #define LEFT_NODE(father) (2 * (father) + 1)
 #define RIGHT_NODE(father) (2 * (father) + 2)
@@ -118,7 +119,10 @@ void sort_heap(int *arr, int len)
     int left;
     int right;
     int max;
-    for (; heapsz > 0; swap(heap, 0, heapsz - 1), heapsz--) { // 交换首尾，自顶向下，重构大顶堆
+    while (heapsz > 0) { // 交换首尾，自顶向下，重构大顶堆
+        SWAP(heap, 0, heapsz - 1);
+        heapsz--;
+
         for (father = 0, left = LEFT_NODE(father), right = RIGHT_NODE(father); father < heapsz; left = LEFT_NODE(father), right = RIGHT_NODE(father)) {
             if (left >= heapsz) {
                 break;
@@ -175,7 +179,7 @@ void sort_base(int *arr, int len)
 int main()
 {
     int arr[100] = {5, 9, 7, 10, 3, 1};
-    sort_base(arr, 6);
+    sort_heap(arr, 6);
     prt(arr, 6);
     return 0;
 }
