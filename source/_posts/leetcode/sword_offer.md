@@ -77,6 +77,12 @@ https://www.nowcoder.com/exam/oj/ta?page=1&tpId=13&type=13
     - 队列
     - 双栈
 3. 二叉搜索树的第k个节点
+    ```bash
+    输入：   8          第4个节点
+          6   10
+         5 7 8 11
+    输出：8 (5->6->7->8)
+    ```
     - 递归：中序遍历，左子树小于根节点
 4. 重建二叉树：输入：前序遍历结果，中序遍历结果
     ```bash
@@ -98,4 +104,53 @@ https://www.nowcoder.com/exam/oj/ta?page=1&tpId=13&type=13
 6. 二叉树的镜像：翻转二叉树
 7. 从上往下打印二叉树：简单的层次打印
 8. 数组是否是二叉搜索树的后序遍历
-9. 
+    - 递归
+    ```c
+    [1 2 3 7 9 8 5]
+    for left < root: 左子树小于root
+    for right < root: 右子树大于root
+    递归
+    ```
+    - 非递归：栈
+9. 二叉树某一路径的和
+    是否存在路径：根到叶子节点之和 = num
+    ```bash
+            8         22=8+8+2+4
+        8       7 
+    9       2
+          4    7  
+    ```
+10. 二叉树某一路径的和 II
+    所有路径：根节点到叶子节点之和  = sum
+    - DFS
+    - BFS
+    ```bash
+    leftpath = ...
+    rightpath = ...
+    rootpath = {l for l in leftpath.append(root), r for r in rightpath.append(root)}
+    ```
+11. 二叉搜索树与双向链表
+    将二叉树转换为双向链表
+    - 递归
+    ```bash
+    输入：      10
+            6       14
+          4   8   12  16
+    输出：4 <-> 6 <-> 8 <-> 10 <-> 12 <-> 14 <-> 16
+    ```
+12. 二叉树是否是平衡二叉树
+    平衡二叉树：左右子树高度差不超过1
+    - 递归
+13. 二叉树的下一个节点
+
+# 图
+https://leetcode.cn/tag/graph/problemset/
+1. 克隆图
+2. 课程表
+    先转换为临界表，{未搜索，搜索中，已搜索}
+    - DFS
+    - BFS
+    ```c
+    ```
+3. 课程表II
+4.
