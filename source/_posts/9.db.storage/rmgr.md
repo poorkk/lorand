@@ -30,3 +30,53 @@ PG_RMGR(RM_BRIN_ID, "BRIN", brin_redo, brin_desc, brin_identify, NULL, NULL)
 PG_RMGR(RM_COMMIT_TS_ID, "CommitTs", commit_ts_redo, commit_ts_desc, commit_ts_identify, NULL, NULL)
 PG_RMGR(RM_REPLORIGIN_ID, "ReplicationOrigin", replorigin_redo, replorigin_desc, replorigin_identify, NULL, NULL)
 ```
+
+## 2.1 HEAP
+```c
+#define XLOG_HEAP_INSERT		0x00
+#define XLOG_HEAP_DELETE		0x10
+#define XLOG_HEAP_UPDATE		0x20
+/* 0x030 is free, was XLOG_HEAP_MOVE */
+#define XLOG_HEAP_HOT_UPDATE	0x40
+#define XLOG_HEAP_CONFIRM		0x50
+#define XLOG_HEAP_LOCK			0x60
+#define XLOG_HEAP_INPLACE		0x70
+#define XLOG_HEAP_OPMASK		0x70
+#define XLOG_HEAP_INIT_PAGE		0x80
+```
+
+## 2.2 HEAP2
+```c
+#define XLOG_HEAP2_REWRITE		0x00
+#define XLOG_HEAP2_CLEAN		0x10
+#define XLOG_HEAP2_FREEZE_PAGE	0x20
+#define XLOG_HEAP2_CLEANUP_INFO 0x30
+#define XLOG_HEAP2_VISIBLE		0x40
+#define XLOG_HEAP2_MULTI_INSERT 0x50
+#define XLOG_HEAP2_LOCK_UPDATED 0x60
+#define XLOG_HEAP2_NEW_CID		0x70
+```
+
+## 2.3 XLOG
+```c
+#define XLOG_CHECKPOINT_SHUTDOWN		0x00
+#define XLOG_CHECKPOINT_ONLINE			0x10
+#define XLOG_NOOP						0x20
+#define XLOG_NEXTOID					0x30
+#define XLOG_SWITCH						0x40
+#define XLOG_BACKUP_END					0x50
+#define XLOG_PARAMETER_CHANGE			0x60
+#define XLOG_RESTORE_POINT				0x70
+#define XLOG_FPW_CHANGE					0x80
+#define XLOG_END_OF_RECOVERY			0x90
+#define XLOG_FPI_FOR_HINT				0xA0
+#define XLOG_FPI						0xB0
+```
+
+## 2.4 RM_SMGR_ID
+```c
+#define XLOG_SMGR_CREATE	0x10
+#define XLOG_SMGR_TRUNCATE	0x20
+``
+
+## 2.5 

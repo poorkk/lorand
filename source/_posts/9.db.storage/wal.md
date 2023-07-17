@@ -7,6 +7,8 @@ tags:
     - 存储引擎
 ---
 
+[toc]
+
 # 1 概述
 ## 1.1 背景
 wal机制解决的问题：持久性、原子性、性能、数据同步、恢复
@@ -457,6 +459,11 @@ CopyXLogRecordToWAL(int write_len, XLogRecData *rdata, XLogRecPtr StartPos, XLog
         while (CurrPos < EndPos)
             WALInsertLockUpdateInsertingAt(CurrPos)
             AdvanceXLInsertBuffer(CurrPos)
+```
+
+## 1.4 log page
+```c
+log_newpage_buffer()
 ```
 
 # 2 xlog重放

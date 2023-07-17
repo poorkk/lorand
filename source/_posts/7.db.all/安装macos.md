@@ -76,6 +76,8 @@ curl -fsSL https://code-server.dev/install.sh | sh
 
 然后，将安装包上传到云服务器：
 ```shell
+https://github.com/coder/code-server/releases
+
 scp ./code-server_4.2.0_amd64.deb lorand@182.92.66.91:~
 ```
 最后，在云服务器上，使用root角色进行安装
@@ -94,6 +96,7 @@ vi ~/.config/code-server/config.yaml
 ```
 运行
 ```shell
+code-server --port 3000 --host 0.0.0.0 --auth password
 code-server 或 nohup code-server &
 ```
 在个人电脑上，使用浏览器，连接code-server
