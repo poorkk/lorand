@@ -77,12 +77,43 @@ smgrextend(SMgrRelation reln, ForkNumber forknum, BlockNumber blocknum, char *bu
 ### smgrwrite
 调用栈
 ```bash
+
+
 smgrwrite(SMgrRelation reln, ForkNumber forknum, BlockNumber blocknum, char *buffer)
     FlushBuffer()
         BufferAlloc()
-            /* START FROM HERE */
+            ReadBuffer_common()
+                /* repeat */
         SyncOneBuffer()
+            BufferSync()
+                CheckPointBuffers()
+                    CheckPointGuts()
+                        CreateCheckPoint()
+                            StartupXLOG()
+                                StartupProcessMain()
+                                InitPostgres()
+                            ShutdownXLOG()
+                                CheckpointerMain() /* case CheckpointerProcess */
+                                    AuxiliaryProcessMain()
+                                InitPostgres()
+                            CheckpointerMain()
+                                /* repeat */
+                            RequestCheckpoint()
+                                XLogWrite()
+                                StartupXLOG()
+                                do_pg_start_backup()
+                                XLogPageRead()
+                                createdb()
+                                dropdb()
+                                movedb()
+                                DropTableSpace()
+                                standard_ProcessUtility() /* case T_CheckPointStmt */
+                        CreateRestartPoint()
+            BgBufferSync()
+                BackgroundWriterMain()
+                    AuxiliaryProcessMain() /* case BgWriterProcess */
         FlushOneBuffer()
+            /* START FROM HERE */
         FlushRelationBuffers()
         FlushDatabaseBuffers()
     FlushRelationBuffers()
