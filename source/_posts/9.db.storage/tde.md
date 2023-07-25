@@ -6,8 +6,34 @@ heapam -> buffer -> smgr -> page
 
 # 2 调用关系
 ## 2.1 初始化数据页
-### page_init
+### PageInit
+```c
+PageInit(Page page, Size pageSize, Size specialSize)
+    heap_xlog_insert()
+    heap_xlog_multi_insert()
+    heap_xlog_update()
+    heap_xlog_visible()
+    raw_heap_insert()
+    PageGetTempPageCopySpecial()
+    fill_seq_with_data()
+    seq_redo()
+    brin_page_init()
+    lazy_scan_heap()
+    GinInitPage()
+    GISTInitBuffer()
+    _hash_pageinit()
+    _bt_pageinit()
+    SpGistInitPage()
+    vm_readbuf()
+    vm_extend()
+    XLogRecordPageWithFreeSpace()
+    fsm_readbuf()
+    fsm_extend()
+```
 ### image
+```c
+
+```
 ## 2.2  写入数据页
 ### smgrextend
 调用栈：
@@ -76,9 +102,7 @@ smgrextend(SMgrRelation reln, ForkNumber forknum, BlockNumber blocknum, char *bu
 ```
 ### smgrwrite
 调用栈
-```bash
-
-
+```c
 smgrwrite(SMgrRelation reln, ForkNumber forknum, BlockNumber blocknum, char *buffer)
     FlushBuffer()
         BufferAlloc()
@@ -113,17 +137,88 @@ smgrwrite(SMgrRelation reln, ForkNumber forknum, BlockNumber blocknum, char *buf
                 BackgroundWriterMain()
                     AuxiliaryProcessMain() /* case BgWriterProcess */
         FlushOneBuffer()
-            /* START FROM HERE */
+            XLogReadBufferForRedoExtended()
+                XLogInitBufferForRedo()
+                    heap_xlog_insert()
+                    heap_xlog_multi_insert()
+                    heap_xlog_update()
+                    seq_redo()
+                    ... /* 33 calls, most indexs */
+                XLogReadBufferForRedo()
+                    xlog_redo()
+                    heap_xlog_insert()
+                    heap_xlog_multi_insert()
+                    heap_xlog_update()
+                    heap_xlog_inplace()
+                    heap_xlog_delete()
+                    heap_xlog_confirm()
+                    heap_xlog_visible()
+                    heap_xlog_freeze_page()
+                    heap_xlog_lock()
+                    heap_xlog_lock_updated()
+                    ... /* 58 calls, most index */
+                heap_xlog_clean()
+                heap_xlog_visible()
+                btree_xlog_vacuum()
         FlushRelationBuffers()
+            /* repeat */
         FlushDatabaseBuffers()
     FlushRelationBuffers()
+        heap_sync()
+            CopyFrom()
+            end_heap_rewrite()
+                /* repeat */
+            intorel_shutdown()
+            transientrel_shutdown()
+            ATRewriteTable()
+                /* repeat */
+        ATExecSetTableSpace()
+            /* repeat */
     LocalBufferAlloc()
+        ReadBuffer_common()
+            /* repeat */
     btbuildempty()
     _bt_blwritepage()
     spgbuildempty()
 ```
 ## 2.3 读取数据页
+```c
+smgrread(SMgrRelation reln, ForkNumber forknum, BlockNumber blocknum, char *buffer)
+    pg_prewarm()
+    copy_relation_data()
+    ReadBuffer_common()
+        /* repeat */
+```
 ## 2.4 记录数据
+
+# 3 关键函数
+```c
+heap_xlog_insert(XLogReaderState *record)
+    if XLOG_HEAP_INIT_PAGE:
+        XLogInitBufferForRedo()
+        PageInit()
+    else:
+        XLogReadBufferForRedo(record, 0, &buffer)
+            XLogReadBufferForRedoExtended(record, 0, RBM_NORMAL, false, buf) {
+                XLogRecGetBlockTag(record, block_id, &rnode, &forknum, &blkno)
+                if XLogRecHasBlockImage(record, block_id):
+                    *buf = XLogReadBufferExtended(rnode, forknum, blkno, RBM_ZERO_AND_LOCK) {
+                        smgr = smgropen(rnode, InvalidBackendId)
+                        smgrcreate(smgr, forknum, true)
+                        lastblock = smgrnblocks(smgr, forknum)
+                        if blkno < lastblo:
+                            buffer = ReadBufferWithoutRelcache(rnode, forknum, blkno, mode, NULL)
+                                smgropen(rnode, InvalidBackendId)
+                                ReadBuffer_common(smgr, RELPERSISTENCE_PERMANENT, forkNum, blockNum,mode, NULL, &hit)
+                                    BufferAlloc() ... /* see buffer.md */
+                        else:
+                            ...
+                    }
+                    page = BufferGetPage(*buf)
+                    RestoreBlockImage(record, block_id, page)
+                    MarkBufferDirty(*buf)
+            }
+```
 
 # 2 记录
 xlog记录类型：（仅针对用户表）

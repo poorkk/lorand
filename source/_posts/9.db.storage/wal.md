@@ -11,6 +11,7 @@ tags:
 
 # 1 概述
 ## 1.1 背景
+https://zhmin.github.io/posts/postgresql-wal-format/
 wal机制解决的问题：持久性、原子性、性能、数据同步、恢复
 - 持久性需求：
     - 执行一次事务/事务块，例如INSERT语句，除了要写数据文件，还需要更新系统表、索引文件、fsm文件、vm文件、事务提交文件等
