@@ -171,7 +171,7 @@ xlog完整格式
 |   << loop end >>              | - |
 | XLR_BLOCK_ID_ORIGIN           | N |
 | replorigin_session_origin     | N |
-| XLR_BLOCK_ID_DATA_SHORT/LONG  | N | 有maindata时
+| XLR_BLOCK_ID_DATA_SHORT/LONG  | N | 有maindata时（可能有误）
 | mainrdata_len                 | N | 有maindata时
 +-------------------------------|---|-----------------------------------------------------------------
 | page start -- hole start      | N | 有page时，写入full-page镜像
