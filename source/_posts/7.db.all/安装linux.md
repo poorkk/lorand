@@ -72,6 +72,9 @@ source pgenv
 cd postgresql-9.2.4
 ./configure --prefix=$PG_HOME --enable-debug
 make install -sj
+
+# debian
+./configure --prefix=$PG_HOME --enable-debug --without-readline --without-zlib
 ```
 1. 生成日志文件并启动数据库服务器
 ```shell
@@ -83,4 +86,24 @@ ps ux | grep bin/postgres
 2. 连接数据库
 ```shell
 psql -h localhost -p 5432 -d postgres
+
+windows cmd 查找局域网ip
+for /L %i IN (1,1,254) DO ping -w 2 -n 1 192.168.137.%i
+
+shell pageup补齐
+https://blog.csdn.net/enzesheng/article/details/42319117
+
+vim 右键粘贴
+https://www.shuzhiduo.com/A/o75NZEl95W/
+
+安装旧版本软件
+apt search xxx
+示例：
+apt install flex-old
+
+# pg 各版本源码
+https://www.postgresql.org/ftp/source/
+
+# vscode 插件
+https://marketplace.visualstudio.com/VSCode
 ```
