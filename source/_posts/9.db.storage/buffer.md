@@ -10,43 +10,47 @@ tags:
 # 1 概述
 ## 1.1 buffer池模型
 模型：
-```c
-    哈希表
-SharedBufHash                Buffer
-+-----+                        +-------+
-| 1   |                     | 1     |
-| 2   |                     | 2     |
-| 3   |                    | 3     |
-| ... |                      | 4     |
-| 128 |                       | ...   |
-+-----+                      
-                        | 1000  |
-                        +-------+
-```
+{% asset_img 1.png %}
 
 ## 1.2 buffer池接口
 缓冲区接口：
 ```c
-/* buffer池管理 */
+/* bufmgr.h */
+
+/* 1 buffer池管理 */
 void InitBufferPool(void);
 void InitBufferPoolAccess(void);
 void InitBufferPoolBackend(void);
 
-/* buffer管理 */
+/* 2 buffer管理 */
+/* 2.1 读buffer */
 Buffer ReadBuffer(Relation reln, BlockNumber blockNum);
 Buffer ReadBufferExtended(Relation reln, ForkNumber forkNum, BlockNumber blockNum, ReadBufferMode mode, BufferAccessStrategy strategy);
-
-void LockBuffer(Buffer buffer, int mode);
-void UnlockBuffers(void);
+Buffer ReadBufferWithoutRelcache(RelFileNode rnode, ForkNumber forkNum, BlockNumber blockNum,ReadBufferMode mode, BufferAccessStrategy strategy);
+/* 2.2 清理buffer */
+oid ReleaseBuffer(Buffer buffer);
+void UnlockReleaseBuffer(Buffer buffer);
 void MarkBufferDirty(Buffer buffer);
-void FlushOneBuffer(Buffer buffer);
-void ReleaseBuffer(Buffer buffer);
-```
-
-进程接口：
-```c
+void IncrBufferRefCount(Buffer buffer);
+Buffer ReleaseAndReadBuffer(Buffer buffer, Relation relation, BlockNumber blockNum);
+/* 2.3 刷盘buffer */
 void CheckPointBuffers(int flags);
+void FlushOneBuffer(Buffer buffer);
+void FlushRelationBuffers(Relation rel);
+void FlushDatabaseBuffers(Oid dbid);
+void BufmgrCommit(void);
 bool BgBufferSync(void);
+/* 2.4 删除关联buffer */
+void DropRelFileNodeBuffers(RelFileNodeBackend rnode, ForkNumber forkNum, BlockNumber firstDelBlock);
+void DropRelFileNodesAllBuffers(RelFileNodeBackend *rnodes, int nnodes);
+void DropDatabaseBuffers(Oid dbid);
+/* 2.5 锁buffer */
+void UnlockBuffers(void);
+void LockBuffer(Buffer buffer, int mode);
+bool ConditionalLockBuffer(Buffer buffer);
+void LockBufferForCleanup(Buffer buffer);
+bool ConditionalLockBufferForCleanup(Buffer buffer);
+bool HoldingBufferPinThatDelaysRecovery(void);
 ```
 
 ## 1.3 buffer调用
