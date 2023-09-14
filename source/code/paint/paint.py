@@ -50,7 +50,7 @@ class Kgame(object):
         root = temp.root_node()
         xy = temp.xy_node(None)
         
-        frame = root.add('frame_game', RECT, [100, 100, 400, 400, 'blue'])
+        frame = root.add('frame_game', RECT, [100, 100, 400, 400, 'blue', 0])
         sk = frame.add('sk', CIRCLE, [100, 100, 50, 'red'])
 
 

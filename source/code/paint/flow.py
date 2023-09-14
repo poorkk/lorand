@@ -1,5 +1,3 @@
-from kk_global import *
-
 '''
 客户端 c | 服务端 s | kms k
 c->s: 1. 初始化
@@ -63,16 +61,16 @@ class Table(object):
     def parse_title(self, title): # 客户端 c | 服务端 s | kms k
         tit = title.split('|')
         for tt in tit:
-            ttl = tt.split(' ')
-            self.title.append(ttl[0], ttl[1] if len(ttl) > 1 else None, len(ttl[0]))
-            self.title.append(None, None, 1)
-        
-        for 
+            ttl = tt.split(' ') # 客户端 c
+            title_txt = Title(ttl[0], ttl[1] if len(ttl) > 1 else None, len(ttl[0]))
+            self.title.append(title_txt)
+            title_space = Title(None, None, 1)
+            self.title.append(title_space)
 
     def parse_column(self, col): # c->s: 1. 初始化
-        
+        pass
 
     def parse(self):
         self.parse_title(self.content[0])
         for i in range(1, len(self.content)):
-            
+            pass
