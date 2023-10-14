@@ -5,70 +5,100 @@
 
 #include "thd.h"
 
+typedef enum {
+    THD_ERR = 0,
+    THD_INIT,
+    THD_ACTIVE,
+    THD_END
+} ThdStatus;
+
+typedef void (*ThdTaskFunc)(void *arg);
+
+typedef struct ThdTask {
+    Node *next;
+    int id;
+    ThdTaskFunc func;
+    void *arg;
+} ThdTask;
+
+typedef struct {
+    pthread_t thd;
+
+    /* thd ctrl */
+    pthread_mutex_t run;
+
+    /* thd info */
+    ThdStatus status;
+    int id;
+    const char *name;
+
+    ThdTask *taskqueue;
+} ThdCtrl;
+
 /* used by thd self */
-#define THD_RUN_READY(tdata) pthread_mutex_lock(&((ThdData *)(tdata))->run)
-#define THD_RUN_END(tdata) pthread_mutex_unlock(&((ThdData *)(tdata))->run)
+#define THD_RUN_READY(tctl) pthread_mutex_lock(&(tctl)->run)
+#define THD_RUN_END(tctl) pthread_mutex_unlock(&(tctl)->run)
 /* used by thd controler */
 #define THD_SET_WAIT THD_RUN_READY
 #define THD_SET_RUN THD_RUN_END
 
 /* thread mainloop */
-void *thd_loop(void *arg)
+void *thd_loop(void *thdctrl)
 {
-    ThdData *tdata = (ThdData *)arg;
+    ThdCtrl *tctl = (ThdCtrl *)thdctrl;
 
     for (;;) {
-        THD_RUN_READY(tdata);
+        THD_RUN_READY(tctl);
 
-        printf("%d\n", tdata->id);
+        printf("%d\n", tctl->id);
 
-        if (tdata->hookfunc != NULL) {
-            tdata->hookfunc(arg);
+        if (tctl->hookfunc != NULL) {
+            tctl->hookfunc(arg);
         }
 
-        THD_RUN_END(tdata);
+        THD_RUN_END(tctl);
     }
     return NULL;
 }
 
 /* create thread */
-void thd_init(ThdData *tdata)
+void thd_init(ThdCtrl *tctl)
 {
     int status;
     
-    pthread_mutex_init(&tdata->run, NULL);
-    THD_SET_WAIT(tdata);
+    pthread_mutex_init(&tctl->run, NULL);
+    THD_SET_WAIT(tctl);
 
-    tdata->status = THD_INIT;
-    tdata->id = 0;
-    tdata->name = NULL;
+    tctl->status = THD_INIT;
+    tctl->id = 0;
+    tctl->name = NULL;
 
-    tdata->hookfunc = NULL;
-    tdata->arg = NULL;
+    tctl->hookfunc = NULL;
+    tctl->arg = NULL;
 
-    status = pthread_create(&tdata->thd, NULL, thd_loop, tdata);
+    status = pthread_create(&tctl->thd, NULL, thd_loop, tctl);
     if (status != 0) {
-        tdata->status = THD_ERR;
+        tctl->status = THD_ERR;
     }
 }
 
-void thd_add(ThdData *tdata, ThdFunc func)
+void thd_add(ThdCtrl *tctl, ThdTaskFunc func)
 {
-    tdata->hookfunc = func;
-    THD_SET_RUN(tdata);
+    tctl->hookfunc = func;
+    THD_SET_RUN(tctl);
     printf("set run\n");
-    THD_SET_WAIT(tdata);
+    THD_SET_WAIT(tctl);
 }
 
-typedef struct {
-    pthread_mutex_t lock;
-    pthread_cond_t hasdata;
-    pthread_cond_t full;
-} ThdCtrl;
+// typedef struct {
+//     pthread_mutex_t lock;
+//     pthread_cond_t hasdata;
+//     pthread_cond_t full;
+// } ThdCtrl;
 
 int main()
 {
-    ThdData t;
+    ThdCtrl t;
 
     thd_init(&t);
     printf("1\n");

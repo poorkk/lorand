@@ -1,6 +1,6 @@
 #include "thd.h"
 
 typedef struct {
-    ThdData *pool;
+    ThdCtrl *pool;
     int cnt;
 } ThdPool;
