@@ -4,6 +4,10 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#ifndef KD_SSL
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#endif
 #include "str.h"
 
 /*
@@ -21,6 +25,12 @@ typedef struct {
     /* data buffer */
     KdBuf *recvbuf;
     KdBuf *sendbuf;
+#ifndef KD_SSL
+    /* ssl  */
+    bool usessl;
+    SSL *ssl;
+    SSL_CTX *ctx;
+#endif
 } KdSock;
 
 KdSock *kd_sock_new(const char *ip, int port);

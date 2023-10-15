@@ -1,10 +1,10 @@
 CC = gcc
 
-CPPFLAGS += -I. -I./include
+CPPFLAGS += -g -I. -I./include
 
 LDFLAGS += -L.
 
-LDLIBS += -g -lpthread
+LDLIBS += -lpthread -lssl
 
 DIRS = $(shell find ./ -maxdepth 3 -type d)
 FILES := $(foreach dir, $(DIRS), $(wildcard $(dir)/*.c))

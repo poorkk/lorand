@@ -127,3 +127,52 @@ void kd_sock_recv(KdSock *s)
     }
     s->recvbuf->used += recvlen;
 }
+
+#ifndef KD_SSL
+// https://blog.csdn.net/sardden/article/details/42705897
+void ssl_server_conn(KdSock *sock, const char *cafile, const char *ser_priv)
+{
+    int ret;
+    
+    /* init */
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+
+    /* load */
+    sock->ctx = SSL_CTX_new(SSLv23_server_method());
+    SSL_CTX *ctx = sock->ctx;
+    if (ctx == NULL) {
+        ERR_print_errors_fp(stdout);
+        ASSERT(false);
+    }
+    ret = SSL_CTX_use_certificate_file(ctx, cafile, SSL_FILETYPE_PEM);
+    if (ret <= 0) {
+        ERR_print_errors_fp(stdout);
+        ASSERT(false);
+    }
+    ret = SSL_CTX_use_PrivateKey_file(ctx, ser_priv, SSL_FILETYPE_PEM);
+    if (ret =  0) {
+        ERR_print_errors_fp(stdout);
+        ASSERT(false);
+    }
+    ret = SSL_CTX_check_private_key(ctx);
+    if (ret =  0) {
+        ERR_print_errors_fp(stdout);
+        ASSERT(false);
+    }
+
+    sock->ssl = SSL_new(ctx);
+    if (ctx == NULL) {
+        ERR_print_errors_fp(stdout);
+        ASSERT(false);
+    }
+    SSL_set_fd(sock->ssl, sock);
+    /* ssl conn */
+    ret = SSL_accept(sock->ssl);
+    if (ret <= 0) {
+        ERR_print_errors_fp(stdout);
+        ASSERT(false);
+    }
+}
+#endif
