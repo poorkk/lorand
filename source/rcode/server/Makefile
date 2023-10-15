@@ -4,7 +4,7 @@ CPPFLAGS += -I. -I./include
 
 LDFLAGS += -L.
 
-LDLIBS += -g
+LDLIBS += -g -lpthread
 
 DIRS = $(shell find ./ -maxdepth 3 -type d)
 FILES := $(foreach dir, $(DIRS), $(wildcard $(dir)/*.c))

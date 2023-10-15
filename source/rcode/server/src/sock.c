@@ -14,143 +14,116 @@
 #include <stdlib.h>
 #include "sock.h"
 #include "str.h"
+#include "http.h"
+#include "thd.h"
+#include "sess.h"
 
-KdServer *kd_server_init(const char *ip, int port)
+KdSock *kd_sock_new(const char *ip, int port)
 {
-    KdServer *s = (KdServer *)malloc(sizeof(KdServer));
+    KdSock *s;
+    int sock;
 
-    s->sock = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in addr = {AF_INET, htons(port), {0}};
+    inet_aton(ip, &addr.sin_addr);
 
-    s->ip = strdup(ip);
-    s->port = port;
+    s = kd_sock_init(sock, &addr);
 
-    struct sockaddr_in addr = {AF_INET, htons(s->port), {0}};
-    inet_aton(s->ip, &s->addr.sin_addr);
+    ASSERT(s->sock >= 0);
+    ASSERT(ip != NULL);
+    ASSERT(s->recvbuf != NULL);
+    ASSERT(s->sendbuf != NULL);
 
     return s;
 }
 
-void kd_server_listen(KdServer *s)
+KdSock *kd_sock_init(int sock, struct sockaddr_in *addr)
+{
+    KdSock *s;
+    
+    s = (KdSock *)malloc(sizeof(KdSock));
+    if (s == NULL) {
+        return NULL;
+    }
+
+    s->sock = sock;
+    memcpy(&s->addr, addr, sizeof(s->addr));
+
+    s->ip = strdup(inet_ntoa(addr->sin_addr));
+    s->port = ntohs(addr->sin_port);
+
+    s->recvbuf = buf_malloc(MAX_SOCK_BUF_SZ);
+    s->sendbuf = buf_malloc(MAX_SOCK_BUF_SZ);
+
+    return s;
+}
+
+void kd_sock_listen(KdSock *s)
 {
     int ret;
 
     ret = bind(s->sock, (struct sockaddr *)&s->addr, sizeof(s->addr));
     if (ret < 0) {
-        return;
+        LOG("failed to bind %s %d, errcode: %d\n", s->ip, s->port, ret);
+        ASSERT(false);
     }
 
     ret = listen(s->sock, 5);
     if (ret < 0) {
-        return;
+        ASSERT(false);
     }
-
     LOG("listen: %s %d\n", s->ip, s->port);
 
     for (;;)  {
-        KdClient *c = (KdClient *)malloc(sizeof(KdClient));
+        /* client info */
+        int csock;
+        struct sockaddr_in caddr = {0};
+        socklen_t caddrsz;
+        KdSock *c;
+
+        csock = accept(s->sock, (struct sockaddr *)&caddr, &caddrsz);
+        ASSERT(csock >= 0);
+
+        c = kd_sock_init(csock, &caddr);
         ASSERT(c != NULL);
+        LOG("--[server] connect | ip: %s port: %d\n", c->ip, c->port);
 
-        c->sock = accept(s->sock, (struct sockaddr *)&c->addr, &c->addrsz);
-        ASSERT(c >= 0);
-
-        c->ip = inet_ntoa(c->addr.sin_addr);
-        c->port = ntohl(c->addr.sin_port);
-        LOG("recv: %s %d\n", c->ip, c->port);
-
-        c->recvbuf = (char *)malloc(4096);
-        ASSERT(c->recvbuf != NULL);
-        c->recvsz = 4096;
-        c->recvused = 0;
-        memset(c->recvbuf, 0, c->recvsz);
-
-        c->sendbuf = (char *)malloc(4096);
-        ASSERT(c->sendbuf != NULL);
-        c->sendsz = 4096;
-        c->sendused = 0;
-        memset(c->sendbuf, 0, c->sendsz);
-
-        for (;;) {
-            int recvlen = read(c->sock, c->recvbuf, c->recvsz - c->recvused); /* 一直read */
-            ASSERT(recvlen > 0);
-
-            LOG("recvlen: %d | %s\n", recvlen, c->recvbuf);
-
-            c->recvused += recvlen;
-            c->recvbuf[c->recvused] = '\0';
-
-            strcat(c->sendbuf, "server: receive [");
-            strcat(c->sendbuf, c->recvbuf);
-            strcat(c->sendbuf, "]");
-
-            int sendlen = write(c->sock, c->sendbuf, strlen(c->sendbuf));
-
-            c->recvused = 0;
-            memset(c->recvbuf, 0, c->recvused);
-            memset(c->sendbuf, 0, c->sendsz);
-        }
+        KdThd *sessthd = thd_new(kd_http_sess_loop, kd_sess_new(s, c));
     }
 }
 
-KdClient *kd_client_init()
-{
-    KdClient *c = (KdClient *)malloc(sizeof(KdClient));
-    ASSERT(c != NULL);
-
-    c->sock = socket(AF_INET, SOCK_STREAM, 0);
-    ASSERT(c->sock >= 0);
-
-    // c->recvbuf = (char *)malloc(4096);
-    // ASSERT(c->recvbuf != NULL);
-    // c->recvsz = 4096;
-    // c->recvused = 0;
-    // memset(c->recvbuf, 0, c->recvsz);
-
-    // c->sendbuf = (char *)malloc(4096);
-    // ASSERT(c->sendbuf != NULL);
-    // c->sendsz = 4096;
-    // c->sendused = 0;
-    // memset(c->sendbuf, 0, c->sendsz);
-
-    return c;
-}
-
-void kd_client_conn(KdClient *c, const char *ip, int port)
+void kd_sock_conn(KdSock *s)
 {
     int ret;
 
-    c->ip = strdup(ip);
-    c->port = port;
-    
-    struct sockaddr_in addr = {AF_INET, htons(port), {0}};
-    inet_aton(ip, &addr.sin_addr);
-    memcpy(&c->addr, &addr, sizeof(c->addr));
-
-    ret = connect(c, (struct sockaddr *)&addr, sizeof(addr));
+    ret = connect(s->sock, (struct sockaddr *)&s->addr, sizeof(s->addr));
     if (ret < 0) {
-        printf("error: failed to connect %s %d\n", ip, port);
+        printf("error: failed to connect %s %d\n", s->ip, s->port);
         ASSERT(false);
     }
 
-    LOG("connect %s %d\n", ip, port);
+    LOG("connect %s %d\n", s->ip, s->port);
 }
 
-void kd_client_send(KdClient *c, const char *data, size_t datalen)
+void kd_sock_send(KdSock *s, const char *data, size_t datalen)
 {
     int sendlen;
-    LOG("send %s %lu\n", data, datalen);
-    sendlen = write(c->sock, data, datalen);
+    sendlen = send(s->sock, data, datalen, 0);
     if (sendlen < 0) {
-        ;
+        printf("failed to send data, errcode: %d\n",  sendlen);
+        ASSERT(false);
     }
 }
 
-void kd_client_recv(KdClient *c)
+void kd_sock_recv(KdSock *s)
 {
     int recvlen;
 
-    memset(c->recvbuf, 0, c->recvused);
+    buf_reset(s->recvbuf);
 
-    recvlen = read(c->sock, c->recvbuf, c->recvsz);
-    LOG("recv %s %lu\n", c->recvbuf, recvlen);
-    c->recvused = recvlen;
+    recvlen = recv(s->sock, s->recvbuf->buf, buf_freesz(s->recvbuf), 0);
+    if (recvlen < 0) {
+        printf("failed to receive, errcode: %d\n",  recvlen);
+    }
+    s->recvbuf->used += recvlen;
 }
