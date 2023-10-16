@@ -34,6 +34,7 @@ static KdHttp *http_new(KdBuf *buf)
     h->kbuf = buf;
     h->reqline = NULL;
     memset(h->methd, 0, sizeof(h->methd));
+    memset(h->uri, 0, sizeof(h->uri));
     h->reqhdr = NULL;
     h->reqbody = NULL;
 
@@ -52,6 +53,7 @@ KdHttp *http_parse_reqmsg(KdBuf *buf)
     }
 
     KdBuf *tmp = h->tmp;
+    const char *cur;
 
     /* find reqline, reqhdr */
     h->reqline = h->kbuf->buf;
@@ -64,11 +66,14 @@ KdHttp *http_parse_reqmsg(KdBuf *buf)
     LOG("REQ LINE: %s\n", tmp->buf);
 
     /* parse reqline */
-    (void)str_spilt(tmp->buf, ' ', h->methd, sizeof(h->methd));
+    cur = str_spilt(tmp->buf, ' ', h->methd, sizeof(h->methd));
     LOG("    method: %s\n", h->methd);
+    cur = str_spilt(cur, ' ', h->uri, sizeof(h->uri));
+    LOG("    uri   : %s\n", h->uri);
 
     /* parse reqhdr */
-    const char *cur = h->reqhdr;
+    cur = h->reqhdr;
+    h->contlen = 0;
     for (;;) {
         buf_reset(tmp);
         cur = str_spilt(cur, '\n', tmp->buf, tmp->size);
@@ -78,12 +83,18 @@ KdHttp *http_parse_reqmsg(KdBuf *buf)
         LOG("REQ HDR : %s\n", tmp->buf);
 
         /* find reqbody */
-        char hdrkey[MAX_HDR_KEY_LEN];
+        char hdrkey[MAX_HDR_KEY_LEN] = {0};
         (void)str_spilt(tmp->buf, '\n', hdrkey, sizeof(hdrkey));
         if (hdrkey[0] == '\r') {
             h->reqbody = cur;
             LOG("REQ BODY: %s\n", h->reqbody);
             break;
+        }
+        const char *hdrcur = str_spilt(tmp->buf, ':', hdrkey, sizeof(hdrkey));
+        if (strcasecmp(hdrkey, "content-length") == 0) {
+            (void)str_spilt(hdrcur, '\r', hdrkey, sizeof(hdrkey));
+            LOG("  content length : %s\n", hdrkey);
+            h->contlen = atoi(hdrkey);
         }
     }
 
@@ -102,8 +113,8 @@ void http_send_resmsg(KdBuf *sendbuf, int rescode, const char *reshdr[], const c
     }
 
     buf_write_str(sendbuf, "\r\n");
-    buf_write_str(sendbuf, resbody);
-    buf_write_str(sendbuf, "\r\n");
-
-    LOG("RES MSG: %s\n<END>\n\n", sendbuf->buf);
+    if (resbody != NULL) {
+        buf_write_str(sendbuf, resbody);
+        buf_write_str(sendbuf, "\r\n");
+    }
 }

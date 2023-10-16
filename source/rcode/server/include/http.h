@@ -4,14 +4,17 @@
 #include "str.h"
 
 #define HTTP_METHD_BUF_SZ 20
+#define HTTP_URI_BUF_SZ 256
 
 typedef struct {
     KdBuf *kbuf;
 
     const char *reqline;
     char methd[HTTP_METHD_BUF_SZ];
+    char uri[HTTP_URI_BUF_SZ];
 
     const char *reqhdr;
+    int contlen;
     const char *reqbody;
 
     KdBuf *tmp;

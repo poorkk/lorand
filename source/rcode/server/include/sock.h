@@ -4,7 +4,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#ifndef KD_SSL
+#ifdef KD_SSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #endif
@@ -25,7 +25,9 @@ typedef struct {
     /* data buffer */
     KdBuf *recvbuf;
     KdBuf *sendbuf;
-#ifndef KD_SSL
+
+    int id;
+#ifdef KD_SSL
     /* ssl  */
     bool usessl;
     SSL *ssl;
@@ -39,6 +41,7 @@ KdSock *kd_sock_init(int sock, struct sockaddr_in *addr);
 void kd_sock_listen(KdSock *s);
 void kd_sock_conn(KdSock *s);
 void kd_sock_send(KdSock *s, const char *data, size_t datalen);
-void kd_sock_recv(KdSock *s);
+void kd_sock_flush_send(KdSock *s);
+int kd_sock_recv(KdSock *s);
 
 #endif

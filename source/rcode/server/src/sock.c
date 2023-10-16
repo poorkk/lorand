@@ -115,20 +115,35 @@ void kd_sock_send(KdSock *s, const char *data, size_t datalen)
     }
 }
 
-void kd_sock_recv(KdSock *s)
+void kd_sock_flush_send(KdSock *s)
 {
-    int recvlen;
+    int sendlen;
+    sendlen = send(s->sock, s->sendbuf->buf, s->sendbuf->used, 0);
+    if (sendlen < 0) {
+        printf("failed to send data, errcode: %d\n",  sendlen);
+        ASSERT(false);
+    }
+}
+
+int kd_sock_recv(KdSock *s)
+{
+    int recvlen = 0;
 
     buf_reset(s->recvbuf);
 
     recvlen = recv(s->sock, s->recvbuf->buf, buf_freesz(s->recvbuf), 0);
-    if (recvlen < 0) {
-        printf("failed to receive, errcode: %d\n",  recvlen);
+    if (recvlen <= 0) {
+        LOG("--[%d] finish | ip: %s, port: %d\n", s->id, s->ip, s->port);
+        return recvlen;
+    } else {
+        LOG("--[%d] recv | len: %d, data: %s\n", s->id, recvlen, s->recvbuf->buf);
+        s->recvbuf->used += recvlen;
     }
-    s->recvbuf->used += recvlen;
+    
+    return recvlen;
 }
 
-#ifndef KD_SSL
+#ifdef KD_SSL
 // https://blog.csdn.net/sardden/article/details/42705897
 void ssl_server_conn(KdSock *sock, const char *cafile, const char *ser_priv)
 {

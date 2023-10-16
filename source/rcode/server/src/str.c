@@ -66,6 +66,29 @@ void str_test()
     }
 }
 
+char *kd_strstr(char *buf, int buflen, const char *find)
+{
+    int findlen = strlen(find);
+    int start;
+    int mlen; /* match len */
+
+    for (start = 0; start < buflen; start++) {
+        if (buf[start] == find[0]) {
+            for (mlen = 1; mlen < buflen; mlen++) {
+                if  (mlen >= findlen) {
+                    return buf + start;
+                }
+
+                if (buf[start + mlen] != find[mlen]) {
+                    break;
+                }
+            }
+        }
+    }
+
+    return NULL;
+}
+
 KdBuf *buf_malloc(int bufsz)
 {
     KdBuf *buf = (KdBuf *)malloc(sizeof(KdBuf));

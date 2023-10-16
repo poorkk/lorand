@@ -24,6 +24,7 @@ do { \
 bool str_end_with(const char *buf, int buflen, char end, char skip);
 const char *str_spilt(const char *data, char split, char *buf, size_t bufsz);
 void str_test();
+char *kd_strstr(char *buf, int buflen, const char *find);
 
 /* array */
 #define ARR_LEN(arr) ((int)sizeof((arr)) / sizeof((arr)[0]))
@@ -41,5 +42,8 @@ void buf_write_str(KdBuf *buf, const char *str);
 void buf_reset(KdBuf *buf);
 #define buf_freesz(kbuf) ((kbuf)->size - (kbuf)->used)
 #define buf_setend(kbuf) ((kbuf)->buf[(kbuf)->used] = '\0')
+
+#define MAX(a, b) ((a) > (b) ?  (a) : (b))
+#define MIN(a, b) ((a) < (b) ?  (a) : (b))
 
 #endif

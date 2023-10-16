@@ -6,15 +6,33 @@
 #include "sock.h"
 #include "cmd.h"
 #include "thd.h"
+#include "file.h"
+
+#define STR(s) #s
+
+#define HOST "192.168.3.23"
+
+void kd_help()
+{
+    const char *help = ""
+        "usage:  \n"
+        "    kdb server PORT\n"
+        "    kdb client PORT\n"
+        "";
+
+    printf("[%s]\n", help);
+}
 
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
+        kd_help();
         return 0;
     }
 
     if (strcmp(argv[1], "server") == 0) {
-        KdSock *s = kd_sock_new("192.168.3.23", 8888);
+        printf(" http://%s:%d\n", HOST, atoi(argv[2]));
+        KdSock *s = kd_sock_new(HOST, atoi(argv[2]));
 
         kd_sock_listen(s);
 
@@ -25,7 +43,7 @@ int main(int argc, char *argv[])
         KdCmd *cmd = kd_cmd_init();
         ASSERT(cmd != NULL);
 
-        KdSock *c = kd_sock_new("192.168.3.23", 7778);
+        KdSock *c = kd_sock_new(HOST, atoi(argv[2]));
         ASSERT(c != NULL);
 
         kd_sock_conn(c);
