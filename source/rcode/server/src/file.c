@@ -30,3 +30,22 @@ int kd_file_read_all(const char *file, char *buf, int bufsz)
 
     return readlen;
 }
+
+void file_scan(const char *file)
+{
+#define BUF_SZ 4096
+
+    char buf[BUF_SZ];
+
+    int fd = open(file, O_RDONLY);
+    int cnt;
+    
+    for (;;) {
+        int readlen = read(fd, buf, BUF_SZ);
+        printf("%d\n", readlen);
+        if (readlen <= 0) {
+            break;
+        }
+    }
+    close(fd);
+}

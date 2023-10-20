@@ -20,11 +20,12 @@ void kd_help()
         "    kdb client PORT\n"
         "";
 
-    printf("[%s]\n", help);
+    printf("%s\n", help);
 }
 
 int main(int argc, char *argv[])
 {
+    file_scan("./kdb");
     if (argc < 2) {
         kd_help();
         return 0;
