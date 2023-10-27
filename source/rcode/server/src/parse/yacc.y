@@ -2,57 +2,54 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define YYDEBUG 1
+
+#define YYSTYPE char *
+
 int yylex();
 int yyerror(char const *str);
 %}
-%union{
-    int int_value;
-    double double_value;
-}
-%token <int_value> INT_LITERAL
-%token <double_value> DOUBLE_LITERAL
-%token ADD SUB MUL DIV CR
-//%type <int_value> expression term primary_expression
-%type <double_value> expression term primary_expression
+
+%token CREATE TABLE INT TEXT
+    INSERT INTO
+    SELECT FROM 
+    UPDATE SET
+    DELETE
+
+%token <int_value> Int
+%token <string_value> Name
+
+%type <string_value> CreateStmt InsertStmt ParseTree
+
 %%
-line_list
-    : line
-    | line_list line
+ParseTree
+    : CreateStmt
+        {
+            $$ = $1;
+        }
+    | InsertStmt
+        {
+            $$ = $1;
+        }
     ;
-line
-    : expression CR
-    {
-        printf(">>%.2lf\n",$1);
-    }
-expression
-    : term
-    | expression ADD term
-    {
-        $$ = $1 + $3;
-    }
-    | expression SUB term
-    {
-        $$ = $1 - $3;
-    }
+
+CreateStmt
+    : CREATE TABLE Name
+        {
+            char *ret = strdump("create stmt");
+            printf("new table '%s'\n", $3);
+            $$ = ret;
+        }
     ;
-term
-    : primary_expression 
-    | term MUL primary_expression
-    {
-        $$ = $1 * $3;
-    }
-    | term DIV primary_expression
-    {
-        $$ = $1 / $3;
-    }
-    ;
-primary_expression
-    : INT_LITERAL {
-        $$ = (double)$1;
-    }
-    | DOUBLE_LITERAL
+InsertStmt
+    : INSERT INTO Name
+        {
+            char *ret = strdump("insert stmt");
+            $$ = ret;
+        }
     ;
 %%
+
+
 int yyerror(char const *str)
 {
     extern char *yytext;

@@ -72,10 +72,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define YYDEBUG 1
+
+#define YYSTYPE char *
+
 int yylex();
 int yyerror(char const *str);
 
-#line 79 "yacc.tab.c"
+#line 82 "yacc.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -106,19 +109,23 @@ enum yysymbol_kind_t
   YYSYMBOL_YYEOF = 0,                      /* "end of file"  */
   YYSYMBOL_YYerror = 1,                    /* error  */
   YYSYMBOL_YYUNDEF = 2,                    /* "invalid token"  */
-  YYSYMBOL_INT_LITERAL = 3,                /* INT_LITERAL  */
-  YYSYMBOL_DOUBLE_LITERAL = 4,             /* DOUBLE_LITERAL  */
-  YYSYMBOL_ADD = 5,                        /* ADD  */
-  YYSYMBOL_SUB = 6,                        /* SUB  */
-  YYSYMBOL_MUL = 7,                        /* MUL  */
-  YYSYMBOL_DIV = 8,                        /* DIV  */
-  YYSYMBOL_CR = 9,                         /* CR  */
-  YYSYMBOL_YYACCEPT = 10,                  /* $accept  */
-  YYSYMBOL_line_list = 11,                 /* line_list  */
-  YYSYMBOL_line = 12,                      /* line  */
-  YYSYMBOL_expression = 13,                /* expression  */
-  YYSYMBOL_term = 14,                      /* term  */
-  YYSYMBOL_primary_expression = 15         /* primary_expression  */
+  YYSYMBOL_CREATE = 3,                     /* CREATE  */
+  YYSYMBOL_TABLE = 4,                      /* TABLE  */
+  YYSYMBOL_INT = 5,                        /* INT  */
+  YYSYMBOL_TEXT = 6,                       /* TEXT  */
+  YYSYMBOL_INSERT = 7,                     /* INSERT  */
+  YYSYMBOL_INTO = 8,                       /* INTO  */
+  YYSYMBOL_SELECT = 9,                     /* SELECT  */
+  YYSYMBOL_FROM = 10,                      /* FROM  */
+  YYSYMBOL_UPDATE = 11,                    /* UPDATE  */
+  YYSYMBOL_SET = 12,                       /* SET  */
+  YYSYMBOL_DELETE = 13,                    /* DELETE  */
+  YYSYMBOL_Int = 14,                       /* Int  */
+  YYSYMBOL_Name = 15,                      /* Name  */
+  YYSYMBOL_YYACCEPT = 16,                  /* $accept  */
+  YYSYMBOL_ParseTree = 17,                 /* ParseTree  */
+  YYSYMBOL_CreateStmt = 18,                /* CreateStmt  */
+  YYSYMBOL_InsertStmt = 19                 /* InsertStmt  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -440,19 +447,19 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  8
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   14
+#define YYLAST   6
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  10
+#define YYNTOKENS  16
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  6
+#define YYNNTS  4
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  12
+#define YYNRULES  5
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  19
+#define YYNSTATES  11
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   264
+#define YYMAXUTOK   270
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -492,15 +499,15 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,     7,     8,     9
+       5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
+      15
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    19,    19,    20,    23,    28,    29,    33,    39,    40,
-      44,    50,    53
+       0,    25,    25,    29,    36,    44
 };
 #endif
 
@@ -516,9 +523,10 @@ static const char *yysymbol_name (yysymbol_kind_t yysymbol) YY_ATTRIBUTE_UNUSED;
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "\"end of file\"", "error", "\"invalid token\"", "INT_LITERAL",
-  "DOUBLE_LITERAL", "ADD", "SUB", "MUL", "DIV", "CR", "$accept",
-  "line_list", "line", "expression", "term", "primary_expression", YY_NULLPTR
+  "\"end of file\"", "error", "\"invalid token\"", "CREATE", "TABLE",
+  "INT", "TEXT", "INSERT", "INTO", "SELECT", "FROM", "UPDATE", "SET",
+  "DELETE", "Int", "Name", "$accept", "ParseTree", "CreateStmt",
+  "InsertStmt", YY_NULLPTR
 };
 
 static const char *
@@ -533,11 +541,12 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    (internal) symbol number NUM (which must be that of a token).  */
 static const yytype_int16 yytoknum[] =
 {
-       0,   256,   257,   258,   259,   260,   261,   262,   263,   264
+       0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
+     265,   266,   267,   268,   269,   270
 };
 #endif
 
-#define YYPACT_NINF (-5)
+#define YYPACT_NINF (-11)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -551,8 +560,8 @@ static const yytype_int16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-       3,    -5,    -5,     0,    -5,    -4,     1,    -5,    -5,    -5,
-       3,     3,    -5,     3,     3,     1,     1,    -5,    -5
+      -3,    -2,    -7,     3,   -11,   -11,   -10,    -9,   -11,   -11,
+     -11
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -560,20 +569,20 @@ static const yytype_int8 yypact[] =
      means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,    11,    12,     0,     2,     0,     5,     8,     1,     3,
-       0,     0,     4,     0,     0,     6,     7,     9,    10
+       0,     0,     0,     0,     2,     3,     0,     0,     1,     4,
+       5
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -5,    -5,    11,    -5,     2,    -3
+     -11,   -11,   -11,   -11
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     3,     4,     5,     6,     7
+       0,     3,     4,     5
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -581,36 +590,32 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       8,    10,    11,     1,     2,    12,     1,     2,    13,    14,
-      17,    18,    15,    16,     9
+       1,     7,     6,     8,     2,     9,    10
 };
 
 static const yytype_int8 yycheck[] =
 {
-       0,     5,     6,     3,     4,     9,     3,     4,     7,     8,
-      13,    14,    10,    11,     3
+       3,     8,     4,     0,     7,    15,    15
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     3,     4,    11,    12,    13,    14,    15,     0,    12,
-       5,     6,     9,     7,     8,    14,    14,    15,    15
+       0,     3,     7,    17,    18,    19,     4,     8,     0,    15,
+      15
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    10,    11,    11,    12,    13,    13,    13,    14,    14,
-      14,    15,    15
+       0,    16,    17,    17,    18,    19
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     1,     2,     2,     1,     3,     3,     1,     3,
-       3,     1,     1
+       0,     2,     1,     1,     3,     3
 };
 
 
@@ -1077,56 +1082,43 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 4: /* line: expression CR  */
-#line 24 "yacc.y"
-    {
-        printf(">>%.2lf\n",(yyvsp[-1].double_value));
-    }
-#line 1086 "yacc.tab.c"
+  case 2: /* ParseTree: CreateStmt  */
+#line 26 "yacc.y"
+        {
+            (yyval.string_value) = (yyvsp[0].string_value);
+        }
+#line 1091 "yacc.tab.c"
     break;
 
-  case 6: /* expression: expression ADD term  */
+  case 3: /* ParseTree: InsertStmt  */
 #line 30 "yacc.y"
-    {
-        (yyval.double_value) = (yyvsp[-2].double_value) + (yyvsp[0].double_value);
-    }
-#line 1094 "yacc.tab.c"
+        {
+            (yyval.string_value) = (yyvsp[0].string_value);
+        }
+#line 1099 "yacc.tab.c"
     break;
 
-  case 7: /* expression: expression SUB term  */
-#line 34 "yacc.y"
-    {
-        (yyval.double_value) = (yyvsp[-2].double_value) - (yyvsp[0].double_value);
-    }
-#line 1102 "yacc.tab.c"
+  case 4: /* CreateStmt: CREATE TABLE Name  */
+#line 37 "yacc.y"
+        {
+            char *ret = strdump("create stmt");
+            printf("new table '%s'\n", (yyvsp[0].string_value));
+            $ = ret;
+        }
+#line 1109 "yacc.tab.c"
     break;
 
-  case 9: /* term: term MUL primary_expression  */
-#line 41 "yacc.y"
-    {
-        (yyval.double_value) = (yyvsp[-2].double_value) * (yyvsp[0].double_value);
-    }
-#line 1110 "yacc.tab.c"
-    break;
-
-  case 10: /* term: term DIV primary_expression  */
+  case 5: /* InsertStmt: INSERT INTO Name  */
 #line 45 "yacc.y"
-    {
-        (yyval.double_value) = (yyvsp[-2].double_value) / (yyvsp[0].double_value);
-    }
+        {
+            char *ret = strdump("insert stmt");
+            (yyval.string_value) = ret;
+        }
 #line 1118 "yacc.tab.c"
     break;
 
-  case 11: /* primary_expression: INT_LITERAL  */
-#line 50 "yacc.y"
-                  {
-        (yyval.double_value) = (double)(yyvsp[0].int_value);
-    }
-#line 1126 "yacc.tab.c"
-    break;
 
-
-#line 1130 "yacc.tab.c"
+#line 1122 "yacc.tab.c"
 
       default: break;
     }
@@ -1320,7 +1312,9 @@ yyreturn:
   return yyresult;
 }
 
-#line 55 "yacc.y"
+#line 50 "yacc.y"
+
+
 
 int yyerror(char const *str)
 {
