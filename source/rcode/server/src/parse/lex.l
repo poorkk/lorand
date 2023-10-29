@@ -9,6 +9,8 @@ int yywrap(void)
 {
     return 1;
 }
+
+#define kk_strdup(s) (YYSTYPE)strdup((s))
 %}
 
 Char [A-Za-z]
@@ -19,12 +21,13 @@ Int [Num]+
 
 %%
 
-CREATE { return CREATE; }
-TABLE { return TABLE; }
-INT { return INT; }
-TEXT {  return TEXT; }
+("quit")|("exit") {exit(0);}
 
-INSERT { return INSERT; }
+CREATE { printf("get [CREATE]\n"); return CREATE; }
+TABLE { return TABLE; }
+INT|TEXT { printf("dbtype %s\n", yytext); yylval = kk_strdup(yytext); return DbType; }
+
+INSERT { printf("get [INSERT]\n"); return INSERT; }
 INTO { return INTO; }
 SELECT { return SELECT; }
 FROM { return FROM; }
@@ -32,12 +35,11 @@ UPDATE { return UPDATE; }
 SET { return SET; }
 DELETE { return DELETE; }
 
-Name { yylval = strdup(yytext); return Name; }
-Int  { yylval = strdup(yytext); return Int; }
+[a-zA-Z][a-zA-Z0-9]* { yylval = kk_strdup(yytext); printf("Name: %s\n", yytext); return ValName; }
+[0-9]+  { yylval = kk_strdup(yytext); printf("Int: %d\n", atoi(yytext)); return ValInt; }
 
-[ \t] ;
+\n  printf("<new line>\n");
+[ \t]+  /* ignore whitespace */;
+. {printf("<%c>\n", yytext[0]);  return (int) yytext[0]; };
 
-("quit")|("exit") {
-    exit(0);
-}
 %%

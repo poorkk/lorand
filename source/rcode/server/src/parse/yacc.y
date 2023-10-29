@@ -1,13 +1,20 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #define YYDEBUG 1
 
-#define YYSTYPE char *
+// #define YYSTYPE char *
+// typedef char * YYSTYPE;
 
 int yylex();
 int yyerror(char const *str);
 %}
+
+%union {
+    int TypeNum;
+    char *TypeStr;
+}
 
 %token CREATE TABLE INT TEXT
     INSERT INTO
@@ -15,16 +22,20 @@ int yyerror(char const *str);
     UPDATE SET
     DELETE
 
-%token <int_value> Int
-%token <string_value> Name
+%token <TypeNum> ValInt
+%token <TypeStr> ValName DbType
 
-%type <string_value> CreateStmt InsertStmt ParseTree
+%type <TypeStr> CreateStmt InsertStmt ParseTree ParseTrees
 
 %%
+ParseTrees:
+    | ParseTrees ParseTree;
+
 ParseTree
     : CreateStmt
         {
             $$ = $1;
+            printf("table name %s\n", $$);
         }
     | InsertStmt
         {
@@ -33,17 +44,18 @@ ParseTree
     ;
 
 CreateStmt
-    : CREATE TABLE Name
+    : CREATE ValName '(' ValName DbType ')'
         {
-            char *ret = strdump("create stmt");
-            printf("new table '%s'\n", $3);
+            char *ret = strdup("create stmt");
+            printf("new table '%s'\n", $2);
             $$ = ret;
         }
     ;
 InsertStmt
-    : INSERT INTO Name
+    : INSERT ValName
         {
-            char *ret = strdump("insert stmt");
+            char *ret = strdup("insert stmt");
+            printf("insert value '%s'\n", $2);
             $$ = ret;
         }
     ;
