@@ -1,18 +1,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "catlog.h"
+
+/* 
+ * --------------------------- sys relations ----------------------------------
+ */
 
 typedef struct {
-    const char *name;
-    int type;
-} Attr;
+    char type;
+    union data
+    {
+        double ival;
+        char *str;
+    };
+} SysType;
 
 typedef struct {
-    const char *name;
-    Attr attrs[];
-} Relation;
+    SysType oid;
+    SysType name;
+} KdRel;
 
-Relation class = {
+const SysRel class = {
     "class",
     {
         {"oid", 1},
@@ -22,11 +31,42 @@ Relation class = {
     }
 };
 
+const char *initvals[] = {
+    " 1 | t1 | 5",
+    " 2 | t2 | 9"
+};
+
+/* 
+ * --------------------------- all sys relations ------------------------------
+ */
+
+SysRel *sysrels[] = {
+    &class,
+};
+
+/* 
+ * --------------------------- sys functions ----------------------------------
+ */
+
+void sysrel_init(SysRel *rel, char **initval[])
+{
+    int i;
+    for (i = 0; initval[i] != NULL; i++) {
+        printf("%s\n", initval[i]);
+    }
+}
+
+void sysrel_init_all()
+{
+    ;
+}
+
 void catlog_test()
 {
     int i = 0;
-    for (int i = 0; class.attrs[i].name != NULL; i++) {
+    for (i = 0; class.attrs[i].name != NULL; i++) {
         printf("%s\n", class.attrs[i].name);
     }
     printf("%d\n", i);
+    sysrel_init(&class, NULL);
 }
