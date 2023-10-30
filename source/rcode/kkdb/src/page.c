@@ -82,11 +82,3 @@ void page_test()
         printf("scan: %s\n", (char *)scan.itemdata);
     }
 }
-
-int main()
-{    
-    page_test();
-    printf("hello\n");
-
-    return 0;
-}

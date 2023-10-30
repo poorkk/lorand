@@ -65,4 +65,7 @@ do {                                                                    \
     }                                                                   \
 } while (0)
 
+
+void page_test();
+
 #endif

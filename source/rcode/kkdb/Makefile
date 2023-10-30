@@ -17,4 +17,4 @@ bin: $(OBJS)
 	$(CC) $(CPPFLAGS) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 clean distclean maintainer-clean:
-	rm -f *.o  ./bin
+	rm -f *.o  $(OBJS)
