@@ -7,6 +7,8 @@
 #include <sys/stat.h>
 #include "catlog.h"
 #include "comm/str.h"
+#include "storage/smgr.h"
+#include "storage/page.h"
 
 /* 
  * --------------------------- sys relations define ----------------------------------
@@ -42,6 +44,7 @@ SysRel sys_class = {
         " 1 | sys_class ",
         " 2 | sys_attr ",
         /* do not add new relation by yourself, we will do it automatically */
+        NULL
     }
 };
 
@@ -55,7 +58,7 @@ typedef struct {
 
 SysRel sys_attr = {
     "sys_attr",
-    {SYS_INT, SYS_TEXT, SYS_INT, SYS_TEXT, SYS_INT},
+    {SYS_INT, SYS_TEXT, SYS_INT, SYS_TEXT, SYS_INT, 0},
     {
         "1 | pg_class | 0 | rel_oid  | SYS_INT ",
         "1 | pg_class | 1 | rel_name | SYS_TEXT ",
@@ -67,6 +70,7 @@ SysRel sys_attr = {
         "2 | pg_attr  | 4 | attr_type | SYS_INT ",
 
         /* do not add new attr by yourself, we will do it automatically */
+        NULL
     }
 };
 
@@ -173,13 +177,70 @@ typedef struct {
     int fd_attr;
 } SysInitMgr;
 
-void sysrel_init(SysInitMgr *mgr, SysRel *rel)
+Data *tuple_split(int attrnum, SysDataType *types, const char *vals)
 {
-    
+    Data *tup = (Data *)malloc(attrnum * sizeof(Data));
+    int i;
+    const char *cur = vals;
+    char buf[256];
+
+    for (i = 0; i < attrnum; i++) {
+        cur = str_spilt(cur, '|', buf, sizeof(buf));
+        if (cur == NULL) {
+            printf("fail to split data '%s'\n", vals);
+            break;
+        }
+        switch (types[i]) {
+            case SYS_CHAR:
+                tup->ival = buf[0];
+                break;
+            case SYS_INT:
+                tup->ival = (int)(buf);
+                break;
+            case SYS_TEXT:
+                tup->sval = strdup(buf);
+                break;
+            case SYS_BYTE:
+                tup->sval = (char *)malloc((int)buf);
+                memcpy(tup->sval, buf, (int)buf);
+                break;
+            default:
+                printf("invalid data type: %d\n", types[i]);
+                break;
+        }
+    }
+
+    return tup;
 }
 
 void sysrel_init_all(SysInitMgr *mgr, SysRel *sys_rels[])
 {
+    int attrnum;
+    int i;
+    int j;
+    Data *tup;
+    int fd;
+
+    for (i = 0; sys_rels[i] != NULL; i++) {
+        SysRel *rel = sys_rels[i];
+
+        for (attrnum = 0; rel->types[attrnum] != 0; attrnum++) {}
+        if (strcmp(rel->name, "sys_class") == 0) {
+           fd = smgr 
+        }
+
+        for (j = 0; rel->relation_vals[j] != NULL; j++) {
+            const char *vals = rel->relation_vals[j];
+            tup = tuple_split(attrnum, rel->types, vals);
+        }
+    }
+
+    
+    Data *tup
+
+    for (i = 0; rel->relation_vals[i] != NULL; i++) {
+
+    }
     /* init 'sys_class' at first */
 
     /* init 'sys_attr' */
