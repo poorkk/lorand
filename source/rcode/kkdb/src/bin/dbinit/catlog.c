@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "catlog.h"
+#include "dbtype.h"
 #include "comm/str.h"
 #include "storage/smgr.h"
 #include "storage/page.h"
@@ -100,10 +101,10 @@ typedef union
 typedef struct {
     int datacnt;
     SysDataType *datatype;
-    Data *data
+    Data *datas;
 } TupData;
 
-void form_tuple(TupData *tup, char *buf, size_t bufsz)
+int form_tuple(TupData *tup, char *buf, size_t bufsz)
 {
     int i;
     SysDataType type;
@@ -134,6 +135,8 @@ void form_tuple(TupData *tup, char *buf, size_t bufsz)
                 break;
         }
     }
+
+    return bufused;
 }
 
 void unform_tuple(char *buf, size_t bufsz, TupData *tup)
@@ -175,11 +178,13 @@ typedef struct {
 
     int fd_class;
     int fd_attr;
+
+    Smgr *smgr;
 } SysInitMgr;
 
-Data *tuple_split(int attrnum, SysDataType *types, const char *vals)
+Data *data_split(int attrnum, SysDataType *types, const char *vals)
 {
-    Data *tup = (Data *)malloc(attrnum * sizeof(Data));
+    Data *datas = (Data *)malloc(attrnum * sizeof(Data));
     int i;
     const char *cur = vals;
     char buf[256];
@@ -190,19 +195,20 @@ Data *tuple_split(int attrnum, SysDataType *types, const char *vals)
             printf("fail to split data '%s'\n", vals);
             break;
         }
+
         switch (types[i]) {
             case SYS_CHAR:
-                tup->ival = buf[0];
+                datas[i]->ival = buf[0];
                 break;
             case SYS_INT:
-                tup->ival = (int)(buf);
+                datas[i]->ival = (int)(buf);
                 break;
             case SYS_TEXT:
-                tup->sval = strdup(buf);
+                datas[i]->sval = strdup(buf);
                 break;
             case SYS_BYTE:
-                tup->sval = (char *)malloc((int)buf);
-                memcpy(tup->sval, buf, (int)buf);
+                datas[i]->sval = (char *)malloc((int)buf);
+                memcpy(datas[i]->sval, buf, (int)buf);
                 break;
             default:
                 printf("invalid data type: %d\n", types[i]);
@@ -210,7 +216,7 @@ Data *tuple_split(int attrnum, SysDataType *types, const char *vals)
         }
     }
 
-    return tup;
+    return datas;
 }
 
 void sysrel_init_all(SysInitMgr *mgr, SysRel *sys_rels[])
@@ -218,20 +224,51 @@ void sysrel_init_all(SysInitMgr *mgr, SysRel *sys_rels[])
     int attrnum;
     int i;
     int j;
-    Data *tup;
     int fd;
 
     for (i = 0; sys_rels[i] != NULL; i++) {
         SysRel *rel = sys_rels[i];
 
+        /* calculate the attr num of sys relation */
         for (attrnum = 0; rel->types[attrnum] != 0; attrnum++) {}
+
+        /* create file */
         if (strcmp(rel->name, "sys_class") == 0) {
-           fd = smgr 
+           fd = smgr_open(mgr->smgr, OID_SYS_CLASS);
+        } else if (strcmp(rel->name, "sys_attr") == 0) {
+            fd = smgr_open(mgr->smgr, OID_SYS_ATTR);
         }
 
+        /* start insert initial values in sys relations */
+        bool haspage = false;
+        int pageno = -1;
+        uchar page[PAGE_SIZE];
+        PageHeader *pghdr = (Page *)page;
+
         for (j = 0; rel->relation_vals[j] != NULL; j++) {
+            Data *datas;
+            char tupbuf[256];
+            int tupsz;
             const char *vals = rel->relation_vals[j];
-            tup = tuple_split(attrnum, rel->types, vals);
+
+            /* form values */
+            datas = data_split(attrnum, rel->types, vals);
+            tupsz = form_tuple(tup, tupbuf, sizeof(tupbuf));
+            if (tupsz == 0) {
+                break;
+            }
+
+            /* read page for insert */
+            if (pageno == -1 || page_get_free_size(page) < tupsz) {
+                pageno++;
+                smgr_read(fd, pageno, page);
+                if (pghdr->flags == 0) {
+                    page_init(page);
+                }
+            }
+
+            /* insert values into page */
+            page_add_item(page, tupbuf, tupsz);
         }
     }
 

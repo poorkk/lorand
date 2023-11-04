@@ -10,6 +10,7 @@ void page_init(Page *page)
     memset(page, 0, PAGE_SIZE);
 
     ph = PAGE_GET_HDR(page);
+    PAGE_SET_FLAG(ph, PAGE_INIT);
     ph->headpos = sizeof(PageHeader);
     ph->tailpos = PAGE_SIZE;
     ph->datapos = PAGE_SIZE;

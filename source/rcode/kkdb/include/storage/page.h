@@ -22,12 +22,21 @@ typedef struct {
  */
 
 typedef struct {
+    uint16 flags;
     uint16 headpos;
     uint16 datapos;
     uint16 tailpos;
 
     ItemDesc descarr[VAR_ARR_SIZE];
 } PageHeader;
+
+/* page flags */
+#define PAGE_INIT 0x0001
+#define PAGE_USED 0x0002
+#define PAGE_FULL 0x0004
+
+#define PAGE_SET_FLAG(page, flag) (((PageHeader *)(page))->flags |= (flag))
+#define PAGE_GET_FLAG(page, flag) (((PageHeader *)(page))->flags & (flag))
 
 typedef uchar Page;
 #define PAGE_SIZE 8192

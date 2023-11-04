@@ -2,7 +2,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "type.h"
 #include "dbtype.h"
 #include "storage/smgr.h"
 
@@ -28,7 +27,7 @@ int smgr_open(Smgr *smgr, int fileid)
     sprintf(smgr->filepath + smgr->dirlen, "%d", fileid);
 
     if (access(smgr->filepath, F_OK) == 1) {
-        return smgr_create;
+        return smgr_create(smgr, fileid);
     }
 
     fd = open(smgr->filepath, O_RDWR);
