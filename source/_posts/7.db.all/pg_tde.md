@@ -7,6 +7,8 @@ tags:
     - postgresql
 ---
 
+[toc]
+
 # 1 特性背景
 
 # 2 实现方案
@@ -125,3 +127,20 @@ typedef struct {
 page_init(page, encinfo)
     memcpy(page, encinfo)
 ```
+
+# 4 特性源码
+## 4.1 基本功能篇
+1. 新增系统表：pg_key_info
+2. 新增系统表：pg_key_data
+3. 新增语法：CREATE KEY
+4. 新增语法：CREATE TABLE .. (encrypt=xx)
+5. 加密判断与密钥存储
+6. 解密判断与密钥来源
+
+## 4.2 高级功能篇
+1. 索引的加密判断与密钥存储
+2. 
+3. 加密Redo Log
+
+## 4.3 加强篇
+1. 新增视图
