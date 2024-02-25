@@ -107,3 +107,6 @@ https://www.postgresql.org/ftp/source/
 # vscode 插件
 https://marketplace.visualstudio.com/VSCode
 ```
+
+
+apt install libreadline-dev

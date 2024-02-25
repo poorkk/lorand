@@ -42,7 +42,7 @@ CREATE KEY mk_1 (type=master_key, storage=localkms, access='./keyfile', protect=
 ```
 2. 定义数据密钥
 ```sql
-CREATE KEY dk_1 (type=date_key, procect=mk_1, algothm=aes_256);
+CREATE KEY dk_1 (type=data_key, protect=mk_1, algorithm=aes_256_cbc);
 ```
 
 ### 二、定义加密表
@@ -129,7 +129,8 @@ page_init(page, encinfo)
 ```
 
 # 4 特性源码
-## 4.1 基本功能篇
+## 4.1 功能概览
+### 基本功能篇
 1. 新增系统表：pg_key_info
 2. 新增系统表：pg_key_data
 3. 新增语法：CREATE KEY
@@ -137,10 +138,121 @@ page_init(page, encinfo)
 5. 加密判断与密钥存储
 6. 解密判断与密钥来源
 
-## 4.2 高级功能篇
+### 高级功能篇
 1. 索引的加密判断与密钥存储
 2. 
 3. 加密Redo Log
 
-## 4.3 加强篇
+### 加强篇
 1. 新增视图
+
+## 4.2 新增系统表 pg_key_info
+1. 查找oid
+```bash
+cd $PGCODE/src/include/catalog
+chmod +x ./unused_oids
+./unused_oids
+```
+4001
+
+2. 新增头文件 pg_key_info.h
+```bash
+touch pg_key_info.h
+git add ./pg_key_info.h
+```
+```c
+#ifndef 
+```
+
+3. 编译头文件
+```bash
+cd $PGCODE/src/backend/catalog
+vi Makefile
+
+# add pg_key_info.h
+```
+
+4. 添加缓存 skip now
+```bash
+cd $PGCODE/src/include/catlog
+vi indexing.h
+```
+
+```c
+DECLARE_UNIQUE_INDEX(pg_key_info_keyoid, 4002, on pg_key_info using btree(keyoid oid_ops));
+#define KeyInfoKeyoidIndexId		4002
+```
+
+5. 编译、安装、启动
+
+6. 验证
+```SQL
+SELECT * FROM pg_key_info;
+\d pg_key_info
+```
+![](tde_catlog.png)
+
+## 4.2 新增系统表 pg_key_data
+流程和方法与新增pg_key_info一致，此处不再赘述
+
+## 4.3 新增语法 CREATE KEY
+1. 定义主密钥
+```sql
+CREATE KEY mk_1 (type=master_key, storage=localkms, access='./keyfile', protect='$pass1');
+```
+2. 定义数据密钥
+```sql
+CREATE KEY dk_1 (type=data_key, protect=mk_1, algorithm=aes_256_cbc);
+```
+3. 负向用例
+```sql
+-- 1. 不设置密钥类型
+CREATE KEY key1 (storage=localkms, access='./keyfile', protect='$pass1');
+
+-- 2. 主密钥 重名
+CREATE KEY mk_1 (type=master_key, storage=localkms, access='./keyfile', protect='$pass1');
+
+-- 3. 主密钥 未设置必要参数：storage等
+CREATE KEY mk_2 (type=master_key, access='./keyfile', protect='$pass1');
+
+-- 4. 主密钥 设置不支持的参数：keyoid, unkownpara
+CREATE KEY mk_2 (type=master_key, keyoid=1, torage=localkms, access='./keyfile', protect='$pass1');
+CREATE KEY mk_2 (type=master_key, unkownpara=1, torage=localkms, access='./keyfile', protect='$pass1');
+
+-- 5. 数据密钥 重名
+CREATE KEY dk_1 (type=data_key, protect=mk_1, algorithm=aes_256_cbc);
+
+--6. 数据密钥 对应的主密钥不存在
+CREATE KEY dk_2 (type=data_key, protect=mk_8, algorithm=aes_256_cbc);
+
+--7. 数据密钥 不支持的算法
+CREATE KEY dk_2 (type=data_key, protect=mk_1, algorithm=rsa_2048);
+```
+
+## 4.4 新增语法 CREATE TABLE .. (protect=$data_key)
+1. 创建加密表
+```sql
+CREATE TABLE t1 (c1 INT, c2 TEXT) WITH (protect=dk_1);
+```
+2. 创建加密索引
+```sql
+CREATE INDEX i1 ON t1 USING btree(c2) WITH (protect=dk_1);
+```
+
+3. 负向用例
+```sql
+-- 不设置参数
+CREATE TABLE t2 (c1 INT, c2 TEXT) WITH (protect);
+
+-- 不存在的数据密钥
+CREATE TABLE t2 (c1 INT, c2 TEXT) WITH (protect=dk_8);
+
+-- 密钥类型为主密钥
+CREATE TABLE t2 (c1 INT, c2 TEXT) WITH (protect=mk_1);
+```
+
+## 4.5 对加密对象的数据进行加密
+
+
+# 参考
+- 新增系统表：https://blog.csdn.net/asmartkiller/article/details/120733642
