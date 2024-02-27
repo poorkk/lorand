@@ -12,30 +12,38 @@ tags:
 # 1 特性背景
 
 # 2 实现方案
-## 2.1 前置条件
-### 一、生成系统表
-- pg_key_info 密钥信息
+## 2.1 系统表
+### 1. pg_key_info 密钥信息
 
-| oid | name | type | storage | access | protect | create_time | round |
-| - | - | - | - | - | - | - | - |
-| 1 | mk_1 | master_key | localkms | path=./keyfile | $pass1 | 2024/02/01 13:01:01 | - |
-| 2 | dk_1 | date_key | database | 16000:1:8190 | mk1 | 2024/02/01 13:01:01 | 0 |
+| keyoid | keyname | type | alrotithm | storage | access | protect | create_time | round |
+| - | - | - | - | - | - | - | - | -|
+| 1 | mk_1 | master_key | any | localkms | path=./keyfile | $pass1 | 2024/02/01 13:01:01 | - |
+| 2 | dk_1 | date_key | aes_256_cbc | database | m100.d100.b1.i2 | mk1 | 2024/02/01 13:01:01 | 0 |
 
-- pg_key_data 密钥
+### 2. pg_key_data 密钥数据
 
 | oid | keydata | algorithm |
 | - | - | - |
 | 3 | abcd1234 | aes_256 |
 
-### 二、生成系统视图
-- pg_enc_rels
+### 3. pg_encryption 加密对象
+| type | database | schema | relname | colname | special | protect | oldest_round | ref |
+|-|-|-|-|-|-|-|-|-|
+| table | db1 | sch1 | t1 | c1 | - | dk_1 | 1 | d100.s100.r100_m100.d100.b1.i2 | 
 
-| oid | database | schema | relname | data_key | master_key | algorithm |
-| - | - | - | - | - | - | - |
-| 8 | postgres | public | t1 | dk_1 | mk_1 | aes_256 |
+## 2.2 定义表
+1. 定义表
+定义表的语法与非加密表一致，我们通过单独的语法定义ENCRYPTION。
+```sql
+CREATE TABLE t1 (c1 INT, c2 TEXT);
+```
 
-## 2.2 操作步骤
-### 一、定义密钥
+2. 定义索引
+```sql
+CREATE INDEX i1 ON t1 (c1);
+```
+
+## 2.3 定义表加密
 1. 定义主密钥
 ```sql
 CREATE KEY mk_1 (type=master_key, storage=localkms, access='./keyfile', protect='$pass1');
@@ -45,18 +53,28 @@ CREATE KEY mk_1 (type=master_key, storage=localkms, access='./keyfile', protect=
 CREATE KEY dk_1 (type=data_key, protect=mk_1, algorithm=aes_256_cbc);
 ```
 
-### 二、定义加密表
-1. 定义加密表
+3. 定义表加密
+表上的索引默认不加密
 ```sql
-CREATE TABLE t1 (c1 INT, c2 TEXT) with (encrypt=dk_1);
+CREATE ENCRYPTION (protect=dk_1) ON TABLE t1;
 ```
 
-2. 定义索引
+4. 定义表上索引加密
 ```sql
-CREATE INDEX i1 ON t1 (c1);
+CREATE ENCRYPTION (protect=dk_1) ON TABLE t1 WITH (index=on);
 ```
 
-### 三、操作加密表
+5. 定义表上xlog加密
+```sql
+CREATE ENCRYPTION (protect=dk_1) ON TABLE t1 WITH (index=on, xlog=on);
+```
+
+6. 定义索引加密
+```sql
+CREATE ENCRYPTION (protect=dk_1) ON INDEX i1;
+```
+
+## 2.4 操作表
 1. 写入数据
 ```sql
 INSERT INTO t1 VALUES (1, 'aaaaa');
@@ -65,9 +83,95 @@ INSERT INTO t1 VALUES (1, 'aaaaa');
 ```sql
 SELECT * FROM t1;
 ```
-3. 轮转密钥
+
+## 2.5 管理表加密
+1. 查看表加密
 ```sql
-ALTER KEY dk_1 UPDATE (keydata);
+SELECT * FROM pg_encryption;
+```
+
+2. 修改表加密的密钥
+```sql
+ALTER ENCRYPTION (protect=dk_2) ON TABLE t1;
+```
+
+3. 删除表加密
+```sql
+DROP ENCRYPTION ON TABLE t1;
+```
+
+## 2.6 管理主密钥
+1. 查看主密钥信息
+```sql
+SELECT * FROM pg_key_info WHERE type = 'master_key';
+```
+
+2. 修改主密钥
+```sql
+ALTER KEY mk_1 SET (access='./keyfile2');
+```
+
+3. 删除主密钥
+```sql
+DROP KEY mk_1;
+```
+
+## 2.7 管理数据密钥
+1. 查看数据密钥信息
+```sql
+SELECT * FROM pg_key_info WHERE type = 'data_key';
+```
+
+2. 查看数据密钥密文
+```sql
+SELECT * FROM pg_key_data;
+```
+
+3. 轮转数据密钥
+```sql
+ROTATION KEY dk_1;
+```
+
+4. 修改数据密钥
+```sql
+ALTER KEY dk_1 SET (protect=mk_2);
+```
+
+5. 收集旧版本数据密钥信息
+```sql
+VACUUM FULL t1;
+```
+
+6. 回收旧版本数据密钥
+```sql
+VACUUM KEY dk_1;
+```
+
+7. 删除数据密钥
+```sql
+DROP KEY dk_1;
+```
+
+## 2.8 未来计划
+1. 定义列加密
+该种定义可用于全密态数据库
+```sql
+CREATE ENCRYPTION (protect=dk_1) ON COLUMN t1(c1);
+```
+
+2. 定义表空间加密
+```sql
+CREATE ENCRYPTION (protect=dk_1) ON TABLESPACE spc1;
+```
+
+3. 定义数据库加密
+```sql
+CREATE ENCRYPTION (protect=dk_1) ON DATABASE spc1;
+```
+
+4. 定义xlog加密
+```sql
+CREATE ENCRYPTION (protect=dk_1) ON XLOG;
 ```
 
 # 3 关键设计
@@ -87,6 +191,7 @@ ALTER KEY dk_1 UPDATE (keydata);
 ```c
 typedef struct {
     uint8 version;
+    uint8 algo;
     Tid   datakeypos;
     uchar iv[16];
     uchar mac[32];
