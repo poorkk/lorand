@@ -153,6 +153,11 @@ DROP KEY dk_1;
 ```
 
 ## 2.8 未来计划
+### 一、功能补充
+1. 在ENCRYPTION与KEY，KEY与KEY之间，添加DEPENDENCY约束
+2. 为ENCRYPTION和KEY添加ACL，控制访问权限
+
+### 二、语法复用
 1. 定义列加密
 该种定义可用于全密态数据库
 ```sql
