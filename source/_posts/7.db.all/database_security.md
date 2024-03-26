@@ -25,11 +25,28 @@ tags:
 ## 2.1 基于IP的身份认证
 标识：访问者的IP
 鉴别：数据库遍历IP白名单，判断访问者IP是否在白名单中，如果在，则认为访问者合法，允许与数据建立TCP连接。
+```c
+ServerLoop
+    ConnCreate
+        StreamConnection
+    BackendStartup
+        BackendRun
+            PostgresMain
+                InitPostgres
+                    PerformAuthentication
+                        ClientAuthentication
+                            hba_getauthmethod
+                                check_hba
+                                    check_hostname
+```
 
 ## 2.2 基于证书的身份认证
 通常，应用与数据库通信时，先采用SSL协议建立安全的通信信道。在建立SSL阶段，数据库可要求应用提供证书，数据库验证应用证书后，才与其建立SSL连接。该场景中，身份标识即证书，身份鉴别即校验证书的合法性。
 标识：证书
-鉴别：数据库使用CA的公钥，判断访问者的证书是否由CA签名，如果是，则认为访问者合法，允许与数据建立SSL连接。
+鉴别：数据库使用CA的公钥，判断访问者的证书是否由CA签名，如果是，则认为访问者合法，允许与数据建立SSL连接
+```c
+
+```
 
 ## 2.3 基于密码的身份认证
 应用与数据库建立连接后，还需再进行一次身份认证。身份标识即数据库用户与密码，身份鉴别即判断用户与密码是否匹配。

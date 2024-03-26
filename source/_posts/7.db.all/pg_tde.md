@@ -27,9 +27,9 @@ tags:
 | 3 | abcd1234 | aes_256 |
 
 ### 3. pg_encryption 加密对象
-| type | database | schema | relname | colname | special | protect | oldest_round | ref |
-|-|-|-|-|-|-|-|-|-|
-| table | db1 | sch1 | t1 | c1 | - | dk_1 | 1 | d100.s100.r100_m100.d100.b1.i2 | 
+| type | name | oid | special | protect | oldest_round |  |
+|-|-|-|-|-|-|-|
+| table | t1 | 100 | - | dk_1 | 1 |
 
 ## 2.2 定义表
 1. 定义表
@@ -58,6 +58,12 @@ CREATE KEY dk_1 (type=data_key, protect=mk_1, algorithm=aes_256_cbc);
 ```sql
 CREATE ENCRYPTION (protect=dk_1) ON TABLE t1;
 ```
+
+CREATE TABLE t1 (c1 INT, c2 TEXT);
+CREATE KEY mk_1 (type=master_key, storage=localkms, access='./keyfile', protect='$pass1');
+CREATE KEY dk_1 (type=data_key, protect=mk_1, algorithm=aes_256_cbc);
+CREATE ENCRYPTION (protect=dk_1) ON TABLE t1;
+SELECT * FROM pg_encryption;
 
 4. 定义表上索引加密
 ```sql
@@ -152,10 +158,17 @@ VACUUM KEY dk_1;
 DROP KEY dk_1;
 ```
 
+## 2.8 管理加密定义
+1. 删除加密定义
+```sql
+DROP ENCRYPTION ON TABLE t1;
+```
+
 ## 2.8 未来计划
 ### 一、功能补充
 1. 在ENCRYPTION与KEY，KEY与KEY之间，添加DEPENDENCY约束
 2. 为ENCRYPTION和KEY添加ACL，控制访问权限
+
 
 ### 二、语法复用
 1. 定义列加密
