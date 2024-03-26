@@ -7,5 +7,9 @@
     "CodeCheck.TaskIds": "",
     "CodeCheck.SubRepoTaskIdsInfo": {},
     "CodeCheck.RelatedRemoteRepo": "https://gitee.com/lorand/lorand.git",
-    "CodeCheck.RelatedRemoteBranch": ""
+    "CodeCheck.RelatedRemoteBranch": "",
+    "files.associations": {
+        "complex": "c",
+        "inet.h": "c"
+    }
 }
