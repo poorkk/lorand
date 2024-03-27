@@ -38,15 +38,27 @@ ServerLoop
                             hba_getauthmethod
                                 check_hba
                                     check_hostname
+                                    check_ip
+                                    /* 如果指定ip未获取到认证方式，则返回空 */
+                            switch hba->auth_method: /* 根据ip采用不同的认证方式 */
+                                case uaReject:
+                                case uaImplicitReject:
+                                case uaGSS:
+                                case uaSSPI:
+                                case uaPeer:
+                                ...
+                                case uaMD5:
+                                case uaPassword:
+                                case uaCert:
+                                case uaTrust:
+                                ...
 ```
 
 ## 2.2 基于证书的身份认证
 通常，应用与数据库通信时，先采用SSL协议建立安全的通信信道。在建立SSL阶段，数据库可要求应用提供证书，数据库验证应用证书后，才与其建立SSL连接。该场景中，身份标识即证书，身份鉴别即校验证书的合法性。
 标识：证书
 鉴别：数据库使用CA的公钥，判断访问者的证书是否由CA签名，如果是，则认为访问者合法，允许与数据建立SSL连接
-```c
 
-```
 
 ## 2.3 基于密码的身份认证
 应用与数据库建立连接后，还需再进行一次身份认证。身份标识即数据库用户与密码，身份鉴别即判断用户与密码是否匹配。
