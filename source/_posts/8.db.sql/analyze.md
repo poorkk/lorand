@@ -10,6 +10,16 @@ tags:
 # 1 概述
 ## 1.1 整体流程
 ```c
+// 语义分析
+exec_simple_query
+    pg_parse_query
+    pg_analyze_and_rewrite
+        parse_analyze
+            transformTopLevelStmt
+                transformOptionalSelectInto
+                    transformStmt   
+                        transformInsertStmt
+
 exec_simple_query()
     pg_parse_query()
     for (;;):

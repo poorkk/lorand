@@ -7,14 +7,16 @@ tags:
     - postgresql
 ---
 
+声明：转载请注明来源，注明作者为shenkun。
+
 # 1 数据库安全机制
 ## 1.1 数据库安全机制概述
 数据库提供多种安全机制，保证数据的机密性、完整性和可用性。一些常见的安全机制有：
-1. 身份认证：基于IP、证书、密码
-2. 访问控制：
+1. 身份认证
+2. 访问控制：角色访问控制、自主访问控制、行级访问控制
 3. 数据脱敏：查询脱敏、日志脱敏
 4. 数据防篡改：账本数据库
-5. 数据加密：全密态、透明加密、SSL
+5. 数据加密：全密态、SSL、加解密函数、透明加密
 6. 安全审计：审计、统一审计
 
 # 2 身份认证
@@ -26,32 +28,33 @@ tags:
 标识：访问者的IP
 鉴别：数据库遍历IP白名单，判断访问者IP是否在白名单中，如果在，则认为访问者合法，允许与数据建立TCP连接。
 ```c
-ServerLoop
-    ConnCreate
-        StreamConnection
-    BackendStartup
-        BackendRun
-            PostgresMain
-                InitPostgres
-                    PerformAuthentication
-                        ClientAuthentication
-                            hba_getauthmethod
-                                check_hba
-                                    check_hostname
-                                    check_ip
-                                    /* 如果指定ip未获取到认证方式，则返回空 */
-                            switch hba->auth_method: /* 根据ip采用不同的认证方式 */
-                                case uaReject:
-                                case uaImplicitReject:
-                                case uaGSS:
-                                case uaSSPI:
-                                case uaPeer:
-                                ...
-                                case uaMD5:
-                                case uaPassword:
-                                case uaCert:
-                                case uaTrust:
-                                ...
+PostmasterMain
+    ServerLoop
+        ConnCreate
+            StreamConnection
+        BackendStartup
+            BackendRun
+                PostgresMain
+                    InitPostgres
+                        PerformAuthentication
+                            ClientAuthentication
+                                hba_getauthmethod /* 从hba文件中，获取指定ip的认证方式 */
+                                    check_hba
+                                        check_hostname
+                                        check_ip
+                                        /* 如果指定ip未获取到认证方式，则返回空 */
+                                switch hba->auth_method: /* 根据ip采用不同的认证方式 */
+                                    case uaReject:
+                                    case uaImplicitReject:
+                                    case uaGSS:
+                                    case uaSSPI:
+                                    case uaPeer:
+                                    ...
+                                    case uaMD5:
+                                    case uaPassword:
+                                    case uaCert:
+                                    case uaTrust:
+                                    ...
 ```
 
 ## 2.2 基于证书的身份认证
@@ -66,19 +69,316 @@ ServerLoop
 鉴别：数据库访问pg_role系统表，判断访问者的密码哈希是否与系统表中的密码哈希一致，如果是，则认为访问者合法，允许与数据库建立会话。
 
 # 3 访问控制
-访问控制的模型是：主体、客体、操作。
-在数据库中，主体指数据库用户，客体指数据对象，操作指用户执行的SQL语句。
+## 3.1 基本概念
+访问控制的模型是：主体、客体、操作。本文不解释基本概念。
+
+访问控制分类如下：
+- 自主访问控制 DAC：客体属主定义访问控制。客体存储权限列表。
+- 角色访问控制 Role-BAC：将主体划分为不同角色，对角色权限进行定义。主体存储权限列表。
+- 规则访问控制 Rule-BAC：比如防火墙
+- 强制访问控制 MAC：基于主体和客体的安全级别标签，机密性场景下读上写，完整性场景上读下写。
+
+在postgresql中，默认支持自主访问控制和角色访问控制，可主动开启规则访问控制（行级访问控制）。访问控制基本概念如下：
+1. 主体：指用户和角色，但不知为何，角色和用户几乎是同一概念，可能是为了方便实现与管理。
+2. 客体：指数据库对象，包括数据库、tablespace、表、列、行、函数等，每种客体都有对应的系统表，系统表中存储了所有客体的基本信息，包括ACL。
+3. 操作：主体对客体的操作，主要有2类。第1类是对具体客体的操作，比如SELECT、UPDATE、INSERT等。第2类指其他如连接数据库、创建数据库、创建用户等操作，由系统表pg_authid控制。
+
+在postgresql中，先使用角色访问控制校验权限，如果校验失败，再使用自主访问控制校验权限。自主访问控制实现得较完整，因此，本文先介绍自主访问控制。
+
+## 3.2 自主访问控制
+### 3.2.1 主体
+创建主体的语法示例如下：
+```sql
+CREATE USER r1 PASSWORD 'r1@12345';
+```
+主体信息存在2个系统表中，pg_authid中存储了所有主体的oid
+```sql
+-- 查询系统表
+SELECT oid,rolname,rolpassword FROM pg_authid;
+oid   | rolename | rolpassword
+------+----------+--------------
+16384 | r1       | md5.........
+
+-- 查询视图与查询pg_authid结果一致
+SELECT * FROM pg_roles;
+SELECT * FROM pg_user;
+```
+
+### 3.2.2 客体
+客体有多种，本文以最常见的表为例。创建主体的语法示例如下：
+```sql
+CREATE TABLE t1 (c1 INT);
+```
+不同客体由不同的系统表，这些系统表中均有ACL、客体属主这2个关键字段。ACL字段默认为空，在鉴权时，如果ACL为空，会认为属主有全部权限。属主即创建客体的用户。
+不同客体及对应的系统表如下：
+```sql
+-- 数据库
+SELECT oid,datname,datdba,datacl FROM pg_database;
+  oid  |  datname  | datdba |            datacl
+-------+-----------+--------+-------------------------------
+ 12295 | postgres  |     10 |
+
+-- 表空间
+SELECT oid,spcname,spcowner,spcacl FROM pg_tablespace;
+ oid  |  spcname   | spcowner | spcacl 
+------+------------+----------+--------
+ 1663 | pg_default |       10 |
+
+-- 表
+SELECT oid,relname,relowner,relacl FROM pg_class;
+  oid  | relname | relowner | relacl
+-------+---------+----------+--------
+ 16386 | t1      |    16384 |
+
+-- 列
+SELECT attrelid,attname,attacl FROM pg_attribute;
+ attrelid | attname | attacl
+----------+---------+--------
+    16386 | c1      |
+
+-- 其他客体不一一介绍，通过以下语法，可查询哪些客体的系统表有ACL字段
+SELECT attrelid::regclass,attname FROM pg_attribute WHERE attname LIKE '%acl%';
+```
+
+### 3.2.3 操作
+主体通常通过SQL语法操作客体，以表为例，主体操作客体的语法示例：
+```sql
+INSERT INTO t1 VALUES (1);
+```
+不同语法需要不同的访问权限，postgresql会自动根据语法和客体ACL校验权限，校验主要分为2个阶段：
+1. 语义分析阶段，根据不同的SQL语法，识别主体、客体和操作，根据操作设置所需权限。比如，在'INSERT INTO t1 ..'语法，主体是执行SQL的当前用户，客体是t1，操作是INSERT，所需权限是ACL_INSERT权限；默认情况下，所需设置ACL_SELECT权限。
+2. 初始化计划阶段，会从客体系统表中，读取ACL，判断主体所需权限是否满足ACL。比如，在'INSERT INTO t1 ..'语法中，客体是t1，客体系统表是pg_class，客体ACL是pg_class中的relacl字段。判断逻辑在下节介绍。
+
+权限使用32位的位图表示：typedef uint32 AclMode;
+权限的类型有如下多种：
+
+| 位数 | 取值 |
+|-|-|
+| 0-3 | ACL_INSERT ACL_SELECT ACL_UPDATE ACL_DELETE (对应 读、写、追加) |
+| 4-7 | ACL_TRUNCATE ACL_REFERENCES ACL_TRIGGER ACL_EXECUTE |
+| 8-11 | ACL_USAGE ACL_CREATE ACL_CREATE_TEMP ACL_CONNECT |
+| 12-15 | not used (低16位表示权限)|
+| 16-31 | (高16位表示组)
+
+### 3.2.4 权限管理
+#### ACL的格式
+ACL本质是1个AclItem数组：[AclItem, AclItem, AclItem, ..]
+AclItem格式如下：
+```c
+typedef struct AclItem {
+    Oid     ai_grantee; // 被授权者
+    Oid	    ai_grantor; // 授权者
+    AclMode ai_privs; // 权限，即表示ACL_INSERT、ACL_SELECT等权限
+} AclItem;
+```
+
+#### 赋权
+```sql
+GRANT SELECT ON t1 TO u2;
+```
+
+- 调用栈
+```c
+PostmasterMain
+    ServerLoop
+        BackendStartup
+            BackendRun
+                PostgresMain
+                    exec_simple_query
+                        PortalRun
+                            PortalRunMulti
+                                ProcessQuery
+                                    InitPlan
+                                        ExecCheckRTPerms(rtes)
+                                            ExecCheckRTEPerms(rte)
+                                                GetUserId
+                                                pg_class_aclmask
+                                                    1. 从pg_class中，获取客体acl数组，如果客体acl为空，默认为owner可读写
+                                                    aclmask
+                                                        2. 从pg_auth_members中，找到主体都属于哪些group
+                                                        3. 判断group权限：如果主体是member of owner，则主体有权限
+                                                        4. 判断role权限：遍历客体acl数组，如果主体是客体acl数组中的一员，则主体有权限
+```
+
+- 表的ACL
+    - ACL：在pg_class中，如果a创建1个表，则表默认的acl是：
+    ```bash
+     relname | relowner | relack
+    ---------+----------+---------
+     t1      | oid_a    |
+    ```
+    - 默认ACL：如果ACL为空，则默认ACL是：[{ownerid, ownerid, INSERT SELECT UPDATE DELETE RUNCATE REFERENCES TRIGGER}]
+
+## 3.3 角色访问控制
+角色访问控制使用的主体、客体、操作的概念与自主访问控制一致。
+
+pg_auth_members中存储了主体之间的组关系。
+```sql
+-- 查询用户组, member是子集
+GRANT r1 TO r2;
+SELECT * FROM pg_auth_members;
+ roleid | member | grantor | admin_option
+--------+--------+---------+--------------
+  16389 |  16390 |      10 | f
+```
+
+- 触发方式
+```sql
+psql -d postgres
+CREATE USER u1 PASSWORD 'pg@12345';
+CREATE USER u2 PASSWORD 'pg@12345';
+\c - u1
+CREATE TABLE t1 (c1 INT);
+\c - u2
+INSERT INTO t1 VALUES (1);
+-- error: permission denied for relation t1
+
+-- 将u2加入u1的组
+\c - u1
+GRANT u1 TO u2;
+\c - u2
+INSERT INTO t1 VALUES (1);
+-- succeed
+```
+
+## 3.4 行级访问控制（规则访问控制）
+在行级访问控制中，客体是表中的行。
+```sql
+CREATE USER u1 PASSWORD 'pg@12345';
+CREATE USER u2 PASSWORD 'pg@12345';
+
+\c - u1
+CREATE TABLE t1 (c1 INT);
+-- 开启行级自主访问控制
+ALTER TABLE t1 ENABLE ROW LEVEL SECURITY;
+INSERT INTO t1 VALUES (1), (3), (5);
+GRANT SELECT,INSERT ON t1 TO u2;
+
+\c - u2
+SELECT * FROM t1;
+-- 结果：查询到 0 条数据
+
+\c - u1
+CREATE POLICY p1 ON t1 FOR SELECT TO u2 USING (c1 <= 3);
+
+\c - u2
+SELECT * FROM t1;
+-- 结果：查询到数据{1, 3}，未查询到数据{5}
+
+EXPLAIN SELECT * FROM t1;
+                     QUERY PLAN
+-----------------------------------------------------
+ Seq Scan on t1  (cost=xx)
+   Filter: (c1 <= 3)
+
+-- 查询pg_policy系统表，可获取过滤规则
+SELECT * FROM pg_policy;
+ polname | polrelid | polcmd | polpermissive | polroles | polqual
+---------+----------+--------+---------------+----------+-------------------------------------------------
+ p1      |    16412 | r      | t             | {16408}  | {OPEXPR :opno 523 :opfuncid 149 :opresultt ...}
+
+-- 查询pg_policy系统试图，可获取较直观的过滤规则
+SELECT * FROM pg_policies;
+ schemaname | tablename | policyname | permissive | roles |  cmd   |   qual    | with_check
+------------+-----------+------------+------------+-------+--------+-----------+------------
+ public     | t1        | p1         | PERMISSIVE | {u2}  | SELECT | (c1 <= 3) |
+
+\c - u1
+CREATE POLICY p2 ON t1 FOR INSERT TO u2 WITH CHECK (c1 <= 10);
+
+INSERT INTO t1 VALUES (7);
+```
+
+参考：
+    - postgresql 10.0.0版本源代码
+    - 访问控制分类：https://zhuanlan.zhihu.com/p/151618654
+    - pg ACL概念：https://www.jianshu.com/p/15262ca1740c
+    - pg 行级访问控制的使用方式：https://zhuanlan.zhihu.com/p/649711345
 
 # 4 数据脱敏
 
-#
-计算机网络：
-操作系统：
-数据库：
-C语言：
-数据结构与算法：
-密码学：
-网络安全：
-系统安全：
-数据库内核：
-其他：了解计算机体系结构、汇编语言、编译原理等。
+# 5 数据防篡改
+
+# 6 数据加密
+
+# 7 安全审计
+## 7.1 日志审计
+```sql
+SET logging_collector = on;
+
+SET log_destination = 'stderr';
+SET log_directory = 'pg_log';
+SET log_filename = 'postgresql-%U-%m-%d_%H%M%S.log';
+SET log_rotation_size = '10MB';
+SET log_rotation_age = '1d';
+
+SET log_connections = off;
+SET log_disconnections = off;
+SET log_statement = none; -- none, ddl, mod(ddl+insert/delete/update/..), all
+```
+
+各种SQL执行流程
+```c
+PostmasterMain
+    ServerLoop
+        BackendStartup
+            BackendInitialize
+                if (Log_connections) /* log_connections */
+                    ereport(LOG, errmsg("connection received: host.."))
+            BackendRun
+                PostgresMain
+                    exec_simple_query
+                        pg_parse_query
+                        check_log_statement(parsetree):
+                            GetCommandLogLevel(parsetree)
+                        if () /* log_statement */
+                            ereport(LOG, errmsg("statement .."))
+
+exec_simple_query
+    pg_parse_query
+    pg_analyze_and_rewrite
+    pg_plan_queries
+    CreatePortal
+    PortalDefineQuery
+    PortalStart
+    PortalRun
+        PortalRunSelect
+            ExecutorRun
+                standard_ExecutorRun
+                    ExecutePlan
+                        for (;;)
+                            ExecProcNode
+                                ExecSeqScan /* SELECT */
+                                    SeqNext
+                                        heap_beginscan
+                                        heap_getnext
+        PortalRunMulti
+            PortalRunUtility
+                ProcessUtility
+                    standard_ProcessUtility
+                        ExecDropStmt /* DROP TABLE */
+                        ProcessUtilitySlow
+                            DefineRelation /* CREATE TABLE */
+            ProcessQuery
+                ExecutorStart
+                ExecutorRun
+                    standard_ExecutorRun
+                        ExecutePlan
+                            for (;;)
+                                ExecProcNode
+                                    ExecModifyTable
+                                        ExecInsert /* INSERT */
+                                            heap_insert
+                                        ExecUpdate /* UPDATE */
+                                            heap_update
+                                        ExecDelete /* DELETE */
+                                            heap_delete
+                ExecutorFinish
+                ExecutorEnd
+    PortalDrop
+```
+
+
+参考：
+- libpq通信协议：https://zhuanlan.zhihu.com/p/379188039
+
