@@ -112,6 +112,10 @@ amoptions   | btoptions     |
 
 # 2 索引实现
 ## 2.1 创建索引 ambuild
+创建索引的关键流程如下：
+1. 扫描所有数据，排序
+2. 自底向上构建B-Link树，Root节点不断变化
+3. 每个节点存储High-Key，存储右兄弟
 ### 一、build整体流程
 ```python
 btbuild
@@ -139,8 +143,6 @@ btbuild
             smgrimmedsync
     _bt_spooldestroy
 ```
-
-
 
 ### 二、build插入tuple
 b+树的每个节点都是1个page，为让build的流程更直观一点，用以下格式表示1个page
