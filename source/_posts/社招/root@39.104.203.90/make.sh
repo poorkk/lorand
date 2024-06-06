@@ -1,0 +1,1 @@
+gcc -I. sock.c server.c -o server
