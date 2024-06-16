@@ -1,10 +1,10 @@
 ---
-title: 算法 排序
+title: LeetCode 排序
 date: 2022-09-25 16:03:37
 categories:
-    - 算法
+    - LeetCode
 tags:
-    - 算法
+    - LeetCode
 ---
 
 # 1 概述

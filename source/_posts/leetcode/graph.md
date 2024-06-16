@@ -1,10 +1,10 @@
 ---
-title: 算法 图
+title: LeetCode 图
 date: 2022-09-25 16:03:37
 categories:
-    - 算法
+    - LeetCode
 tags:
-    - 算法
+    - LeetCode
 ---
 
 # 1 图的介绍
