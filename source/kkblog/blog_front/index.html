@@ -10,31 +10,46 @@
 
 <body>
     <!-- 分类 -->
-    <div class="div-left" id="header">
-        <div class = "div-intro">
-            <p>头像</p>
+    <div class="div-window" id="header">
+        <div class="div-left" id="header">
+            <div class = "div-header">
+                <img class="pic-header" src="header.jpg"  />
+            </div>
+
+            <div class = "div-intro">
+                <p id="myname"> Shen Kun </p>
+                <p font-size=16px> 邮箱: shenkun@bupt.cn </p>
+                <p font-size=16px> 电话: 182 1371 8616 </p>
+            </div>
+    
+            <div class = "div-type">
+                <p id="catalog"> 目录 </p>
+                <button class = "btn-blog-type" onclick="myFunction()">操作系统</button>
+                <button class = "btn-blog-type" onclick="myFunction()">计算机网络</button>
+                <button class = "btn-blog-type" onclick="myFunction()">数据库</button>
+            </div>
         </div>
 
-        <div class = "div-intro">
-            <p>头像</p>
+        <!-- 博客列表 -->
+        <div class="div-middle">
+            <p id="lists"> 列表 </p>
+            <button class = "btn-blog-list" onclick="myFunction()">标题1 HTTP协议</button>
+            <button class = "btn-blog-list" onclick="myFunction()">标题2 TCP与IP协议的原理</button>
+            <button class = "btn-blog-list" onclick="myFunction()">标题3 操作系统</button>
+            <button class = "btn-blog-list" onclick="myFunction()">标题4 计算机网络</button>
         </div>
-
-        <div class = "div-type">
-            <button onclick="myFunction()">操作系统</button>
-            <button onclick="myFunction()">计算机网络</button>
-            <button onclick="myFunction()">数据库</button>
+    
+        <!-- 博客正文 -->
+        <div class="div-right" id="cur-blog">
+            <div class="div-blog-title">
+                <p id="blog-title"> CPU体系结构 </p>
+                <p id="blog-info"> 作者: shen kun 日期: 2024.05.10 </p>
+            </div>
+            <p>	即使可以使用 HTML 表格来创建漂亮的布局，但设计表格的目的是呈现表格化数据 - 表格不是布局工具！即使可以使用 HTML 表格来创建漂亮的布局，但设计表格的目的是呈现表格化数据 - 表格不是布局工具！
+                即使可以使用 HTML 表格来创建漂亮的布局，但设计表格的目的是呈现表格化数据 - 表格不是布局工具！
+                即使可以使用 HTML 表格来创建漂亮的布局，但设计表格的目的是呈现表格化数据 - 表格不是布局工具！
+            </p>
         </div>
-    </div>
-
-    <!-- 博客列表 -->
-    <div class="div-middle">
-        <p>标题1 HTTP协议</p>
-        <p>标题2 TCP与IP协议的原理</p>
-    </div>
-
-    <!-- 博客正文 -->
-    <div class="div-right" id="cur-blog">
-        <p>	即使可以使用 HTML 表格来创建漂亮的布局，但设计表格的目的是呈现表格化数据 - 表格不是布局工具！</p>
     </div>
 </body>
 
