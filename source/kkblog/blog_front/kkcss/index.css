@@ -10,10 +10,9 @@ h1 {
 .div-left {
     width: 10%;
     height: 1000px;
-    border: 1px solid #333;
-    box-shadow: 8px 8px 5px #444;
-    padding: 8px 12px;
-    background-color:#FFA500;
+    border: 1px rgb(121, 118, 118);
+    padding: 3px 3px;
+    background-color:hsl(125, 87%, 77%);
     float: left;
 }
 /* 左 - 头像 */
