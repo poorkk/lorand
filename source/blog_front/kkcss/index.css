@@ -1,0 +1,53 @@
+body {
+    background-color:#d0e4fe;
+}
+h1 {
+    color:orange;
+    text-align:center;
+}
+
+/* 左 */
+.div-left {
+    width: 10%;
+    height: 1000px;
+    border: 1px solid #333;
+    box-shadow: 8px 8px 5px #444;
+    padding: 8px 12px;
+    background-color:#FFA500;
+    float: left;
+}
+/* 左 - 头像 */
+.div-intro {
+    width: 60px;
+    height: 60px;
+    border: 1px solid #333;
+    box-shadow: 8px 8px 5px #444;
+    background-color:#00FF00;
+}
+/* 左 - 博客分类 */
+.div-type {
+    height: 60px;
+    border: 1px solid #333;
+    box-shadow: 8px 8px 5px #444;
+    background-color:#FF0000;
+}
+/* 中 - 博客列表 */
+.div-middle {
+    width: 19%;
+    height: 1000px;
+    border: 1px solid #333;
+    box-shadow: 8px 8px 5px #444;
+    padding: 8px 12px;
+    background-color:#FFA500;
+    float: left;
+}
+/* 右 - 博客正文 */
+.div-right {
+    width: 65%;
+    height: 1000px;
+    border: 1px solid #333;
+    box-shadow: 8px 8px 5px #444;
+    padding: 8px 12px;
+    background-color:#00FFFF;
+    float: left;
+}
