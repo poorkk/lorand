@@ -1,20 +1,16 @@
-h1 {
-    color:orange;
-    text-align:center;
-}
-
 .div-window {
     width: 100%;
     height: 100%;
     display: flex;
-    background-color:hwb(0 100% 0%);
+    background-color:#f6f6f6;
+    font-family:"Arial";
 }
 /* 左 */
 .div-left {
-    width: 200px;
-    height: auto;
-    left: 5px;
+    width: 160px;
+    height: 100%;
     position: absolute;
+    position: fixed;
 }
     /* 左 - 头像 */
     .pic-header{
@@ -22,8 +18,8 @@ h1 {
         left: 17px;
         position: absolute;
         border-radius: 30px;
-        width:150px;
-        height:150px;
+        width:100px;
+        height:100px;
     }
     /* 左 - 个人信息 */
     .div-intro {
@@ -38,6 +34,9 @@ h1 {
         text-align:center;
         font-size: 20px;
     }
+    .p-myinfo {
+        font-size: 14px;
+    }
     /* 左 - 博客分类 */
     .div-type {
         width: 100%;
@@ -51,45 +50,59 @@ h1 {
             margin: 5px;
         }
         .btn-blog-type {
-            width: 100%;
+            width: 108%;
             font-size: 20px;
-            color: rgb(5, 149, 233);
-            border: 1px solid hwb(0 73% 25%);
+            color: #1c9544;
             margin-top: -1px;
+            margin-left: -10px;
             background-color:hwb(0 100% 0%);
+            border: 0px;
+            border-top: 1px solid hwb(0 73% 25%);
+            border-bottom: 1px solid hwb(0 73% 25%);
         }
 
 /* 中 - 博客列表 */
 .div-middle {
-    width: 400px;
-    height: auto;
-    left: 200px;
+    width: 300px;
+    height: 100%;
+    left: 170px;
     position: absolute;
-    background-color:hwb(0 100% 0%);
+    /* background-color:#f6f6f6; */
+    border-left: 15px solid #f6f6f6;
+    border-right: 15px solid #f6f6f6;
+    position: fixed;
 }
     #lists {
         text-align:center;
-        font-size: 25px;
+        font-size: 20px;
         margin: 5px;
+        font-family:"黑体";
     }
     .btn-blog-list {
-        width: 100%;
+        /* font-family:"宋体"; */
+        width: 302px;
         font-size: 17px;
         text-align: left;
-        color: rgb(5, 149, 233);
+        /* color: rgb(5, 149, 233); */
+        color: #1c9544;
         padding-left:8px;
-        border: 1px solid hwb(0 73% 25%);
+        padding: 1px 8px;
+        border: 0px;
+        border-top: 1px solid hwb(0 73% 25%);
+        border-bottom: 1px solid hwb(0 73% 25%);
         margin-top: -1px;
-        background-color:hwb(0 100% 0%);
+        margin-left: -1px;
+        background-color:#ffffff;
+        /* background-color:hwb(0 100% 0%); */
     }
 
 /* 右 - 博客正文 */
 .div-right {
     flex-grow: 1;
     height: 100%;
-    left: 610px;
+    left: 500px;
     position: absolute;
-    padding: 8px 12px;
+    padding: 10px 20px;
 }
     #blog-title {
         text-align:center;
