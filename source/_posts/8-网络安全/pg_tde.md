@@ -2,9 +2,9 @@
 title: 数据库 5 postgresql 表级透明加密
 date: 2022-09-25 16:03:37
 categories:
-    - 数据库
+    - 网络安全
 tags:
-    - postgresql
+    - 网络安全
 ---
 
 [toc]
