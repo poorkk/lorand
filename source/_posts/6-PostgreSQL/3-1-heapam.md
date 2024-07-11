@@ -7,10 +7,14 @@ tags:
     - PostgreSQL
 ---
 
-# 1 概述
+# 1 heamp的简介
 前置知识：Relation的基本概念，Tuple的基本概念
 
-## 1.1 heapam接口基本介绍
+## 1.1 heapam接口的目标
+
+-> [page]
+
+## 1.2 heapam接口基本介绍
 heapam是存储模块对上层提供的数据读写接口，这些接口通常是操作1个relation中的1个或多个tuple。
 本文介绍以下4个最常用的接口，即如何向1个relation中写入、删除、更新、读取1个Tuple，接口定义如下：
 ```c
@@ -35,7 +39,30 @@ HeapTuple heap_getnext(HeapScanDesc scan)
 
 明确存储接口该解决哪些问题后，了解heapam接口时，可大概清楚每一步的目的。
 
-## 1.3 heapam的基本
+## 1.3 heapam的调用栈
+```c
+/*
+ * 此处，以4个常见的SQL为例，介绍数据库如何调用heapam接口
+ *  1. INSERT INTO t1 VALUES (1, 'data1');
+ *  2. SELECT * FROM t1;
+ *  3. DELETE FROM t1 WHERE c1 = 1;
+ *  4. UPDATE t1 SET c2 = 'data2' WHERE c1 = 1;
+ */
+exec_simple_query("SQL语句") /* 该函数是所有SQL语句的统一处理入口  */
+    PortalRun()
+        PortalRunMulti()
+            ProcessQuery()
+                ExecutorRun()
+                    standard_ExecutorRun()
+                        ExecutePlan()
+                            ExecProcNode() /* 从这里开始分叉，不同类型的SQL语句，由不同函数处理 */
+                                ExecModifyTable()
+                                    ExecInsert() /* 处理：INSERT INTO t1 VALUES (1, 'data1') */
+                                        heap_insert(relation, tuple, ..)
+                                
+```
+
+# 2 
 
 ```c
 otherBuffer：update场景，包含旧数据
