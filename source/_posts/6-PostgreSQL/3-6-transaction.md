@@ -8,14 +8,14 @@ tags:
 ---
 
 # 1 事务的概念
-## 1.1 事务的特性
+## 1.1 事务的基本特性
 事务的4个特性：
 - 原子性 Automicity
 - 一致性 Consistency
 - 隔离性 Isolation
 - 持久性 Durability
 
-## 1.2 隔离性
+## 1.2 事务的隔离性
 不同隔离级别下，可能出现的异常如下：（T 表示可能）
 
 | 异常      | 读未提交 | 读已提交 | 可重复读 | 可串行化 | 解释 |
@@ -32,24 +32,229 @@ show default_transaction_isolation;
     read committed
 ```
 
-## 2 事务的实现原理
+## 1.3 事务的实现
 为实现事务，有3种并发控制机制：
 - MVCC: Multi-Version Concurrency Control, 多版本并发控制
 - S2PL: Strict 2-Phase Lock
 - OCC: Optimistic Concurrency Control
 
-postgresql使用MVCC机制，主要原理如下：
-- 为每个事务分配一个递增的ID
-- 数据库保存每个事务的提交状态
-- 事务生成tuple时，tuple携带事务ID（在postgresql中，1个tuple存储1行数据）
-- 事务删除tuple时，tuple携带事务ID
-- 事务查询tuple时，根据tuple时携带的ID，查询对应事务的提交状态，判断tuple是否可见
+## 1.4 PostgreSQL的MVCC机制
+PostgreSQL对数据的关键操作：
+- 新增数据：INSERT
+- 修改数据：DELETE、UPDATE
+- 查询数据：SELECT
 
-以下是MVCC的一个简单的示例：
-1. 开始事务a，数据库为a分配ID1，并保存提交状态：{1:未提交}
-2. 开始事务b，数据库为b分配ID2，并保存提交状态：{1:未提交，2:未提交}
-3. 事务a写入数据INSERT INTO t1 VALUES ('a')，数据库存储tuple时，同时存储ID: {1, 'a'}
-4. 事务b查询数据SELECT * FROM t1，获取tuple {1, 'a'}，查询ID为1的事务状态，发现该事务未提交，则该tuple不可见
+postgresql使用MVCC机制，主要原理如下：
+- 新增数据
+    - 为每个事务分配一个递增的ID
+    - 事务生成tuple时，tuple携带事务ID
+- 删除数据
+    - 生成事务快照
+    - 根据事务快照，判断待删除数据是否可见
+    - 事务删除tuple时，tuple携带事务ID
+- 查询数据
+    - 生成事务快照
+    - 根据tuple时携带的ID，从快照中查询对应事务的提交状态，判断tuple是否可见
+
+| 操作 | 获取快照次数 | 使用快照次数 | 获取事务id次数 |
+|-|-|-|
+| INSERT | 2 | 0 | 1 |
+| UPDATE | 2 | 1 | 1 |
+| DELETE | 2 | 1 | 1 |
+| SELECT | 2 | 1 | 0 |
+
+
+```python
+# 1 生成事务快照
+GetTransactionSnapshot
+
+heap_insert
+    GetCurrentTransactionId  # 申请事务id
+heap_delete
+    GetCurrentTransactionId
+    HeapTupleSatisfiesUpdate # 查询提交日志
+heap_update
+    GetCurrentTransactionId
+    HeapTupleSatisfiesUpdate # 查询提交日志
+heapgettup
+    HeapTupleSatisfiesVisibility  # 查询事务快照
+        HeapTupleSatisfiesMVCC
+```
+
+## 1.5 判断元组可见性
+```python
+HeapTupleSatisfiesUpdate
+    # 阶段一、检查Tuple的写入事务
+    if not tuple->infomask & HEAP_XMIN_COMMITTED: # （快速判断）Tuple的写入事务 未提交，HeapTupleHeaderXminCommitted
+        if TransactionIdIsCurrentTransactionId(tuple->xmin): # Tuple的写入事务 是 本事务
+            if tuple->cid >= curcid: # 根据cid判断可见性
+                return HeapTupleInvisible
+            # 省略，看不懂
+        elif TransactionIdIsInProgress(tuple->xmin): # Tuple的写入事务 未提交
+            return HeapTupleInvisible
+        elif TransactionIdDidCommit(tuple->xmin): #  Tuple的写入事务 已提交（慢速判断，查询事务日志）
+            tuple->infomask & HEAP_XMIN_COMMITTED
+        else:
+            tuple->infomask & HEAP_XMIN_INVALID  # 未找到Tuple的写入事务的提交日志
+            return HeapTupleInvisible
+    else:   # Tuple的写入事务 已提交
+
+        # 阶段二、检查Tuple的删除事务
+        if tuple->t_infomask & HEAP_XMAX_INVALID: # 初始状态，并没有事务尝试删除Tuple，INSERT时，t_infomask初始值为HEAP_XMAX_INVALID
+            return HeapTupleMayBeUpdated
+        else:
+            if tuple->t_infomask & HEAP_XMAX_COMMITTED：  # （快速判断）Tuple的删除事务，已提交
+                return HeapTupleUpdated              
+            if tuple->t_infomask & HEAP_XMAX_IS_MULTI # 暂时忽略
+                ...
+
+            if TransactionIdIsCurrentTransactionId(tuple->xmax): # Tuple的删除事务，是本事务
+                if tuple->cid >= curcid:
+                    return HeapTupleSelfUpdated # 自己未来删除？
+                else:
+                    return HeapTupleInvisible
+            else;
+                if TransactionIdIsInProgress(tuple->xmax): # Tuple的删除事务，未提交，（遍历所有正在运行中的线程，判断事务状态）
+                    return HeapTupleBeingUpdated
+                else: # 删除Tuple的事务，已提交或发生异常
+                    if not TransactionIdDidCommit(tuple->xmax)：# Tuple的删除事务，未提交（遍历事务提交日志）
+                        tuple->infomask & HEAP_XMAX_INVALID # 删除Tuple的事务，发生异常了
+                        return HeapTupleMayBeUpdated
+                    else:   # Tuple的删除事务，已提交
+                        tuple->infomask & HEAP_XMAX_COMMITTED
+                        return HeapTupleUpdated
+```
+
+# 2 PostgreSQL事务的实现
+## 2.1 INSERT
+插入数据时，获取2次快照，获取1次事务id。未用上快照
+```python
+exec_simple_query
+    # 1. 简单的初始化
+    start_xact_command 
+
+    # 2. 对于INSERT/SELECT/UPDATE/DELETE语句，在语义分析之前，都会调用一次GetTransactionSnapshot，来生成一次快照
+    #    此处的快照，用于语义分析、计划初始化
+    if analyze_requires_snapshot 
+        GetTransactionSnapshot
+    pg_analyze_and_rewrite
+    pg_plan_queries
+    PortalStart
+    PortalRun
+        if PORTAL_MULTI_QUERY:
+            PortalRunMulti
+                # 3. 对于INSERT/DELETE/UPDATE等语法，重新获取最新快照
+                GetTransactionSnapshot 
+                ProcessQuery
+                    ExecutorRun
+                        ExecutePlan
+                            ExecProcNode
+                                ExecModifyTable
+                                    ExecInsert
+                                        # 4. 调用存储统一接口
+                                        heap_insert
+                                            GetCurrentTransactionId # 5. 获取当前事务的id
+                                            heap_prepare_insert     # 6. 将事务id写入Tuple
+                                            ...                     # 7. 继续其他heap_insert操作
+```
+
+## 2.2 DELETE
+插入数据时，获取2次快照，获取1次事务id
+```python
+exec_simple_query
+    # 1. 简单的初始化
+    start_xact_command 
+
+    # 2. 对于INSERT/SELECT/UPDATE/DELETE语句，在语义分析之前，都会调用一次GetTransactionSnapshot，来生成一次快照
+    #    此处的快照，用于语义分析、计划初始化
+    if analyze_requires_snapshot 
+        GetTransactionSnapshot
+    pg_analyze_and_rewrite
+    pg_plan_queries
+    PortalStart
+    PortalRun
+        if PORTAL_MULTI_QUERY:
+            PortalRunMulti
+                # 3. 对于INSERT/DELETE/UPDATE等语法，重新获取最新快照
+                GetTransactionSnapshot 
+                ProcessQuery
+                    ExecutorRun
+                        ExecutePlan
+                            ExecProcNode
+                                ExecModifyTable
+                                    ExecDelete
+                                        # 4. 调用存储统一接口
+                                        heap_delete
+                                            GetCurrentTransactionId # 5. 获取当前事务的id
+                                            # 6 根据提交日志，检查事务可见性
+                                            HeapTupleSatisfiesUpdate
+```
+
+## 2.3 UPDATE
+更新数据时，获取2次快照，获取1次事务id
+```python
+exec_simple_query
+    # 1. 简单的初始化
+    start_xact_command 
+
+    # 2. 对于INSERT/SELECT/UPDATE/DELETE语句，在语义分析之前，都会调用一次GetTransactionSnapshot，来生成一次快照
+    #    此处的快照，用于语义分析、计划初始化
+    if analyze_requires_snapshot 
+        GetTransactionSnapshot
+    pg_analyze_and_rewrite
+    pg_plan_queries
+    PortalStart
+    PortalRun
+        if PORTAL_MULTI_QUERY:
+            PortalRunMulti
+                # 3. 对于INSERT/DELETE/UPDATE等语法，重新获取最新快照
+                GetTransactionSnapshot 
+                ProcessQuery
+                    ExecutorRun
+                        ExecutePlan
+                            ExecProcNode
+                                ExecModifyTable
+                                    ExecUpdate
+                                        # 4. 调用存储统一接口
+                                        heap_update
+                                            GetCurrentTransactionId # 5. 获取当前事务的id
+```
+
+## 2.4 SELECT
+插入数据时，获取2次快照，未获取事务id
+```python
+exec_simple_query
+    # 1. 简单的初始化
+    start_xact_command 
+
+    # 2. 对于INSERT/SELECT/UPDATE/DELETE语句，在语义分析之前，都会调用一次GetTransactionSnapshot，来生成一次快照
+    #    此处的快照，用于语义分析、计划初始化
+    if analyze_requires_snapshot 
+        GetTransactionSnapshot
+    pg_analyze_and_rewrite
+    pg_plan_queries
+
+    # 3. 获取快照
+    PortalStart
+        GetTransactionSnapshot
+    PortalRun
+        if PORTAL_ONE_SELECT:
+            PortalRunSelect
+                ExecutorRun
+                    standard_ExecutorRun
+                        ExecutePlan
+                            ExecProcNode
+                                ExecSeqScan
+                                    SeqNext
+                                        # 3. 在heapam层，使用快照
+                                        heap_getnext 
+                                            heapgettup
+                                                HeapTupleSatisfiesVisibility
+                                                    HeapTupleSatisfiesMVCC
+                                                        if !HeapTupleHeaderXminCommitted:
+                                                            XidInMVCCSnapshot(HeapTupleHeaderGetRawXmin(tuple), HeapScanDesc->rs_snapshot)
+                                                                # tuple 不可见
+```
 
 ## 2.1 分配事务ID
 - 事务ID类型：postgresql使用TransactionId表示事务ID，类型为uint32，简写为xid
