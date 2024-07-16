@@ -8,6 +8,36 @@ tags:
 ---
 
 # 1 概述
+## 1.1 语义分析的目的
+- 语义分析的目的
+上文提到，PostgreSQL接收SQL语句时，会生成1个语法解析树，语法解析树存储了SQL语法中的关键信息。比如，在语法`INSERT INTO t1 VALUES(1, 'data1')`中，解析结果可说明：
+1. 这是一条用于插入数据的INSERT语法
+2. 数据将插入t1表中
+3. 要插入的数据是`(1, 'data1')`
+4. ...
+但是，数据库执行时，还需要更多的关键信息才行，比如，在`INSERT INTO t1 VALUES(1, 'data1')`的语法树中，PostgreSQL需要获取一些关键信息：
+1. 数据库中是否有表叫t1
+2. t1表有几列，每列的的数据类型是什么
+3. 语法中的值`(1, 'data1')`是否符合t1表的定义
+4. ...
+
+## 1.2 本文的目标
+本文以几个常见且简单的语法为例，介绍语义分析的详细功能
+1. CREATE TABLE ..
+2. SELECT .. FROM ..
+3. INSERT INTO ..
+4. DELETE FROM ..
+
+## 1.3 语义分析的调用关系
+```python
+exec_simple_query
+    pg_parse_query
+    pg_analyze_and_rewrite
+        parse_analyze
+```
+
+
+
 ## 1.1 整体流程
 ```c
 // 语义分析

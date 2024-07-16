@@ -7,10 +7,40 @@ tags:
     - PostgreSQL
 ---
 
-# sql语法
+# 1 语法解析概述
+## 1.1 语法解析的目的
+- 语法解析的目的
+用户向数据发送以下SQL语句时：
+```
+CREATE TABLE t1 (c1 INT, c2 TEXT);
+INSERT INTO t1 VALUES (1, 'data1');
+DELETE FROM t1 WHERE c1 = 1;
+```
+从用户的角度，掌握SQL语法后，我们很容易理解上述SQL的含义。
+从PostgreSQL的角度，上述语句知识一串字符串，需要根据SQL语法的规则，从字符串中解析表名、列名、数据等关键信息。
 
-# 1 概述
-## 1.1 语法
+- 语法解析的流程
+此处将语法解析的步骤简要分为以下4个阶段：
+1. 定义语法：PostgreSQL开发人员需要根据SQL标准，制定一些类语法规则。比如：
+    - 当用户执行`CREATE TABLE ..`时，表示用户需要创建表
+    - 当用户执行`CREATE TABLE tablename ..`时，表示用户要创建的表名叫`tablename`
+2. 发布语法：PostgreSQL会在官网上发布其定义的各种语法
+3. 构造语句：当开发人员想让数据执行某些操作时，需根据数据库定义的语法，构造SQL语句，再让数据库执行。比如：
+    - 当用户想创建一个名为`t1`的表，需要构造SQL语句`CREATE TABLE t1 ..`
+4. 解析语法：PostgreSQL接收SQL语句后，根据语法规则，可解析SQL想要执行什么操作，生成1个结构体，结构中存储了SQL语句的关键信息，比如：
+    - 处理`CREATE TABLE t1 ..`，结构体中，将有1个变量表示表名，该变量的值将被复制为`t1`
+5. 执行语法：在解析用户操作后，生成一个结构体，即根据结构体，开始执行各种操作
+
+## 1.2 语法解析的类型
+PostgreSQL支持上百种语法，本文主要介绍以下4个常用的语法：
+1. CREATE TABLE ..
+2. SELECT .. FROM ..
+3. INSERT INTO ..
+4. DELETE FROM ..
+
+# 2 解析语法
+
+
 ```sql
 [ WITH [ RECURSIVE ] with_query [, ...] ]
 SELECT [ ALL | DISTINCT [ ON ( expression [, ...] ) ] ]
