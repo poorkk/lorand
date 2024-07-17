@@ -9,12 +9,37 @@ tags:
 
 # 1 概述
 ## 1.1 总接口
-```c
-TupleTableSlot *ExecProcNode(PlanState *node)
+```python
+exec_simple_query
+    pg_plan_queries
+        pg_plan_query
+            planner
+                standard_planner
+                    subquery_planner
+                        pull_up_subqueries
+                        preprocess_qual_conditions
+                        grouping_planner
+                            query_planner
+                                make_one_rel
+                                    set_base_rel_pathlists # 查找所有Scan类型
+                                        set_rel_pathlist
+                                            set_plain_rel_pathlist
+                                                create_seqscan_path
+                                                create_index_paths
+                                                    get_index_paths
+                                                    generate_bitmap_or_paths
+                                                create_tidscan_paths
+                    get_cheapest_fractional_path
+                    create_plan
+
+create_plan_recurse
+    create_scan_plan
 ```
 
 ## 1.2 算子类型
 ```c
+TupleTableSlot *ExecProcNode(PlanState *node)
+
 /* 控制算子 */
 ExecResult((ResultState *) node);
 ExecModifyTable((ModifyTableState *) node);
