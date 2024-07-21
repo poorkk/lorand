@@ -26,10 +26,22 @@ tags:
 
 postgresql默认的隔离级别是读已提交
 ```sql
+-- 查看默认事务隔离级别
 show default_transaction_isolation;
-    default_transaction_isolation
-    -------------------------------
-    read committed
+ default_transaction_isolation
+-------------------------------
+ read committed
+
+-- 查询当前的事务快照 pg 10
+SELECT txid_current_snapshot();
+ txid_current_snapshot
+-----------------------
+ 1081:1081:
+
+-- 查询所有正在活跃的进程
+SELECT  * FROM pg_stat_activity;
+
+-- 
 ```
 
 ## 1.3 事务的实现
@@ -82,11 +94,60 @@ heapgettup
 ```
 
 ## 1.5 判断元组可见性
+生成新tuple
+```python
+tuple
+    xmin = xid
+    xmax = 0
+    cid = cid
+    infomask = HEAP_XMAX_INVALID
+```
+
+删除Tuple
+```python
+tuple
+    cid = cid
+    xmax = xid
+```
+
+更新Tuple
+```python
+new-tuple
+    xmin = xid
+```
+
+检查tuple可见性的几种返回值 HTSU_Result
+- HeapTupleMayBeUpdated
+    - tup可见，可被更新，没有事务修改过它
+- HeapTupleInvisible
+    - tup 不可见
+- HeapTupleSelfUpdated
+    - tup可见，当前事务已修改过tup
+- HeapTupleUpdated
+    - tup可见，修改tup的事务已提交
+- HeapTupleBeingUpdated
+    - tup可见，有事务修改tup，修改它的事务没提交，需等其他事务提交
+- HeapTupleWouldBlock
+    - 如果对元组加锁，当前事务可能会被阻塞
+
+
+```python
+HTSU_Result
+    HeapTupleMayBeUpdated  # 
+    HeapTupleInvisible
+    HeapTupleSelfUpdated
+    HeapTupleUpdated
+    HeapTupleBeingUpdated
+    HeapTupleWouldBlock
+```
+
 ```python
 HeapTupleSatisfiesUpdate
     # 阶段一、检查Tuple的写入事务
-    if not tuple->infomask & HEAP_XMIN_COMMITTED: # （快速判断）Tuple的写入事务 未提交，HeapTupleHeaderXminCommitted
-        if TransactionIdIsCurrentTransactionId(tuple->xmin): # Tuple的写入事务 是 本事务
+    if  !HeapTupleHeaderXminCommitted(tuple): # （快速判断）not tuple->infomask & HEAP_XMIN_COMMITTED
+        if HeapTupleHeaderXminInvalid: # tuple->infomask & [HEAP_XMIN_COMMITTED | HEAP_XMIN_INVALID] = HEAP_XMIN_INVALID
+                return HeapTupleInvisible
+        if TransactionIdIsCurrentTransactionId(tuple->xmin): # Tuple->xmin 的写入事务 是 本事务
             if tuple->cid >= curcid: # 根据cid判断可见性
                 return HeapTupleInvisible
             # 省略，看不懂
@@ -123,6 +184,10 @@ HeapTupleSatisfiesUpdate
                     else:   # Tuple的删除事务，已提交
                         tuple->infomask & HEAP_XMAX_COMMITTED
                         return HeapTupleUpdated
+```
+
+```python
+    if tup.infomask & XMIN_COMMITTED:
 ```
 
 # 2 PostgreSQL事务的实现

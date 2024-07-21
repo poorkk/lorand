@@ -33,12 +33,180 @@ SELECT * FROM t1;
 显然，上述示例中，方案2的执行速度更快，数据库需要根据一定的策略，选择哪种执行方案。这便是计划器的职责。
 
 ## 1.2 生成计划的场景
+1. SQL语法
+```sql
+CREATE TABLE t1 (c1 INT, c2 TEXT);
+INSERT INTO t1 VALUES (1, 'data-1'), (2, 'data-2');
+ANALYZE;
+SELECT * FROM pg_statistic WHERE starelid = 't1'::regclass;
+```
 
 ## 1.3 计划的简单表示
 
 ## 1.4 算子的分类
 
 # 2 算子
+## 2.0 算子分类
+### 一、扫描算子
+    - SeqScan
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        SELECT * FROM t1 WHERE c1 = 1;
+        ```
+    - SampleScan
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        SELECT count(*) FROM t1 TABLESAMPLE BERNOULLI(10); -- 随机查询约10%的数据
+        ```
+    - IndexScan
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        CREATE INDEX i1 ON t1(c1);
+        ANALYZE;
+        SELECT * FROM t1 WHERE c1 = 1;
+        ```
+    - IndexOnlyScan
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        CREATE INDEX i1 ON t1(c1);
+        ANALYZE;
+        SELECT c1 FROM t1 WHERE c1 = 1;
+        ```
+    - BitmapIndexScan
+        - 根据Tid构造Bitmap
+    - BitmapHeapScan
+        - 根据Bitmap扫描表
+    - TidScan
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        SELECT * FROM t1 WHERE ctid = '(0, 3)'; -- 查询第0号Page中的第3个Tuple (只查询可见Tuple)
+        SELECT ctid FROM t1 WHERE c1 = 100;
+        ```
+    - FunctionScan
+        ```sql
+        SELECT * FROM random(); -- 函数的返回值构成1个Tuple
+        ```
+    - ValuesScan
+        ```sql
+        SELECT * FROM (VALUES (1, 'data1'), (2, 'data2'), (3, 'data3')) AS t1(c1, c2);
+        ```
+    - CteScan
+    - ForeignScan
+    - CustomScan
+        - 使用C语言自定义扫描路径与扫描计划
+
+### 二、控制算子
+    - Result
+        ```sql
+        SELECT 1 + 2; -- 场景1：优化一些与常量等价的条件
+        INSERT INTO t1 VALUES (1, 'data'); -- 场景2：封装一些VALUES子句
+        ```
+    - ModifyTable
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (1, 'data');  -- ModifyTable算子包括：INSERT / UPDATE / DELTE 算子
+        UPDATE t1 SET c2 = 'data2' WHERE c1 = 1;
+        DELETE FROM t1 WHERE c1 = 1;
+        ```
+    - Append
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        CREATE TABLE t2 (c1 INT, c2 TEXT);
+        (SELECT * FROM t1) UNION ALL (SELECT * FROM t2); -- 拼接不同执行计划的结果
+        ```
+    - MergeAppend
+    - RecursiveUnion
+    - BitmapAnd
+    - BitmapOr
+### 三、连接算子
+    - NestLoop
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        CREATE TABLE t2 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        INSERT INTO t2 VALUES (generate_series(1, 100), 'data');
+        SELECT t1.c1,t2.c1 FROM t1 INNER JOIN t2 ON t1.c1 = 1; -- 2层for循环
+
+        -- for i in t1 [tup-1, tup-1000]
+        --     for j in t2 [tup-1, tup-100]
+        --          do compare
+        ```
+    - MergeJoin
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        CREATE TABLE t2 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        INSERT INTO t2 VALUES (generate_series(1, 100), 'data');
+        SELECT t1.c1,t2.c1 FROM t1 INNER JOIN t2 ON (t1.c1 = t2.c1); -- 先排序，再循环
+
+        -- sort for i in t1 [tup-1, tup-1000]
+        -- sort for j in t2 [tup-1, tup-100
+        -- for i in sort [tup-1, tup-1000]
+        --     for j in sort [tup-1, tup-100]
+        --          do compare
+        ```
+    - HashJoin
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        CREATE TABLE t2 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        INSERT INTO t2 VALUES (generate_series(1, 100), 'data');
+        SELECT t1.c1,t2.c1 FROM t1 INNER JOIN t2 ON (t1.c1 = t2.c1); -- 先哈希，再循环
+
+        -- hash [tup-1, tup-1000]
+        -- for j in t2 sort [tup-1, tup-100]
+        --     do compare
+        ```
+### 四、物化算子
+    - Material
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        CREATE TABLE t2 (c1 INT, c2 TEXT);
+        SELECT * FROM t1 WHERE c1 > ANY (SELECT c1 FROM t2); -- 如果某些数据集合较大，需增加物化算子缓存数据集合
+        ```
+    - Sort
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        SELECT * FROM t1 ORDER BY c1;
+        ```
+    - Group
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        SELECT c1 FROM t1 GROUP BY c1 ORDER BY c1;
+        ```
+    - Agg
+        - HashAgg
+        - GroupAgg
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (generate_series(1, 1000), 'data');
+        SELECT c1 FROM t1 GROUP BY c1; -- 聚合数据，使用HASH聚合
+        SELECT count(*) FROM t1 GROUP BY c1 ORDER BY c1; -- 聚合数据，使用Group聚合
+        ```
+    - WindowAgg
+    - Unique
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (1, 'data1-1'), (1, 'data1-2'), (2, 'data2');
+        ANALYZE;
+        SELECT DISTINCT(c1) FROM t1 GROUP BY c1;
+        ```
+    - Hash
+    - SetOp
+    - LockRows
+    - Limit
+        ```sql
+        CREATE TABLE t1 (c1 INT, c2 TEXT);
+        INSERT INTO t1 VALUES (1, 'data1-1'), (1, 'data1-2'), (2, 'data2');
+        SELECT * FROM t1 LIMIT 1;
+        ```
+
 ## 2.1 扫描算子
 ### 问题场景
 ### 一、SeqScan
@@ -53,6 +221,17 @@ SELECT * FROM t1;
 |   2     |     2     |  1 | data1 |
 |         |     3     |  8 | data8 |
 +---------+-----------+----+-------+
+```
+
+**源码**
+```python
+ExecSeqScan
+    ExecScan
+        ExecScanFetch
+            SeqNext
+                heap_beginscan
+                heap_getnext
+                    heapgettup
 ```
 
 ### 二、IndexScan
@@ -101,7 +280,36 @@ SELECT * FROM t1 WHERE c1 > 6 AND c1 < 9;
  8  | data8
 ```
 
+**源码**
+```python
+ExecIndexScan
+    ExecScan
+        ExecScanFetch
+            IndexNext
+                index_beginscan
+                index_getnext
+                    tid = index_getnext_tid # 1 扫描index page, 获取idx tup，获取heap tup的tid
+                        amgettuple -> btgettup
+                            # 5 如果上次扫描的idx tup对应的heap tup已被删除，将上次扫描的idx tup记录在scan中
+                            if scan->kill_prior_tuple:
+                                so->killedItems[so->numKilled++]
+                    index_fetch_heap  #  2 根据tid，从heap page中，获取heap tup
+                        heap_page_prune_opt
+                        heap_hot_search_buffer # 3 遍历 hot 链，查找tuple
+                        scan->kill_prior_tuple = true # 4 如果未找到，标记当前heap tup已被删除
+
+ExecEndIndexScan
+    index_endscan
+        amendscan -> btendscan
+            _bt_killitems # 6 如果有些heap tup已被删除，将它们对于的idx tup也设置删除标记
+                _bt_killitems
+                    _bt_getbuf
+                    ItemIdMarkDead # ItemId->lp_flags = LP_DEAD
+        IndexScanEnd
+```
+
 ### 三、IndexOnlyScan
+功能：直接从Index中获取大部分数据
 1. 前置条件：存储数据
 ```bash
 | PageIdx | Tuple Idx | c1 |   c2  |
@@ -138,14 +346,49 @@ SELECT c1 FROM t1 WHERE c1 > 6 AND c1 < 9;
 3. 查找数据
     1. 从索引中，基于B+树的原理，快速找到c1=6的Tid为[1,1]
     2. 从Vm文件中，判断第1个表Page是否包含被标记删除的Tuple，发现1第个Page，存在被删除的Tuple
-    2. 读取表文件的第1个Page，然后找到第1个Tuple
-    3. 
+    3. 读取表文件的第1个Page，然后找到第1个Tuple
+    3. 从索引中，找到c1=8,Tid=[1,2]的Tuple
+
+**源码**
+```python
+ExecIndexOnlyScan
+    ExecScan
+        ExecScanFetch
+            IndexOnlyNext
+                index_beginscan
+                tid = index_getnext_tid # 1 扫描index page, 获取idx tup，获取heap tup的tid
+                if !VM_ALL_VISIBLE(tid.ip_blkid) # 2 判断heap tup所在的page，是否全部tup可见
+                    tup = index_fetch_heap       # 3 如果非全部可见，扫描haep page，获取heap tup
+                    # 如果tup不可见，继续扫描一个idx tup
+                ExecStoreTuple # 从idx tup中，获取数据，此次扫描结束
+```
 
 ### 四、BitmapScan
+- 场景1
+    1. 多个索引上查询
+    ```sql
+    CREATE TABLE t1 (c1 INT, c2 INT);
+    CREATE INDEX i1 ON t1(c1);
+    CREATE INDEX i2 ON t1(c2);
+    explain SELECT * FROM t1 WHERE c1 > 5 AND c2 < 5;
+    ```
+    2. 使用索引 i1，构造bitmap 1
+    2. 使用所以 i2，构造bitmap 2
+    4. bitmap 1 AND bitmap 2
+
 3. 查找数据
     1. 找到需要读取的Tuple [1,1] [1,2] [2,3]
     2. 读取第1个Page，获取第1和第2个Tuple
     2. 读取第2个Page，获取第3个Tuple
+
+```python
+ExecBitmapIndexScan
+    
+ExecBitmapHeapScan
+    ExecScan
+        ExecScanFetch
+            BitmapHeapNext
+```
 
 ### 五、SubquryScan
 ### 六、
