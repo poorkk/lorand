@@ -116,6 +116,58 @@ new-tuple
     xmin = xid
 ```
 
+一个tuple有以下几种状态：
+- xmin
+    - 本事务 me
+    - 其他事务 other
+        - 未提交 uncommit # 遍历所有当前进程
+        - 已提交 commit   # 遍历commit log
+        - 已回滚 rollback 
+- xmax
+    - 本事务
+    - 其他事务
+        未提交
+        已提交
+        已回滚
+- cid
+    - 本事务
+        - cid小
+        - cid大
+    - 其他事务
+
+```python
+if tup.xmin = my.xid:
+    if tup.cid >= my.cid:
+        return HeapTupleInvisible
+    else:
+        if tup.xmin != my.xid
+            return HeapTupleMayBeUpdated
+        else:
+            if tup.cid >= my.cid: # related to scan, remain, not understand
+                return HeapTupleSelfUpdated
+            else:
+                return HeapTupleInvisible
+else:
+    if tup.xmin.stat = uncommit: # check all process
+        return HeapTupleInvisible
+    elif tup.xmin.stat = commit: # check commit log
+        if tup.xmax = my.xid:
+            if tup.cid >= my.cid:
+                return HeapTupleSelfUpdated
+            else:
+                return HeapTupleInvisible
+        else:
+            if tup.xmax.stat = uncommit:
+                return HeapTupleBeingUpdated
+            else:
+                if tup.xmax.stat = rollback:
+                    return HeapTupleMayBeUpdated
+                else: # tup.xmax.start = commit
+                    return HeapTupleUpdated
+    else tup.xmin.stat = rollback:
+        return HeapTupleInvisible
+```
+
 检查tuple可见性的几种返回值 HTSU_Result
 - HeapTupleMayBeUpdated
     - tup可见，可被更新，没有事务修改过它
@@ -129,17 +181,6 @@ new-tuple
     - tup可见，有事务修改tup，修改它的事务没提交，需等其他事务提交
 - HeapTupleWouldBlock
     - 如果对元组加锁，当前事务可能会被阻塞
-
-
-```python
-HTSU_Result
-    HeapTupleMayBeUpdated  # 
-    HeapTupleInvisible
-    HeapTupleSelfUpdated
-    HeapTupleUpdated
-    HeapTupleBeingUpdated
-    HeapTupleWouldBlock
-```
 
 ```python
 HeapTupleSatisfiesUpdate
