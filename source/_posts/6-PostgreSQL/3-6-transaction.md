@@ -94,6 +94,56 @@ heapgettup
 ```
 
 ## 1.5 判断元组可见性
+本博客已2个事务，并发INSERT和DELETE为例，介绍元组可见性判断。
+- 场景一
+```bash
+| Time| Trancation 1 (xid=1)      | Trancation 2 (xid=2)  | tuple state
++-----+---------------------------+-----------------------+--------------
+| 1   | BEGIN                     | -                     |
+| 2   | INSERT INTO t1 VALUES (1) | -                     |
+| 3   | COMMIT                    | -                     |
+| 4   | -                         | BEGIN                 |
+| 5   | -                         | DELETE FROM t1        |
+| 6   | -                         | COMMIT                |              
++-----+---------------------------+-----------------------+--------------
+| 1   | BEGIN                     | -                     |
+| 2   | INSERT INTO t1 VALUES (1) | -                     |
+| 3   | ROLLBACK                  | -                     |
+| 4   | -                         | BEGIN                 |
+| 5   | -                         | DELETE FROM t1        |
+| 6   | -                         | COMMIT                |          
++-----+---------------------------+-----------------------+--------------
+| 1   | BEGIN                     | -                     |
+| 2   | INSERT INTO t1 VALUES (1) | -                     |
+| 3   | DELETE FROM t1            | -                     |
+| 3   | COMMIT                    | -                     |
+| 4   | -                         | BEGIN                 |
+| 5   | -                         | DELETE FROM t1        |
+| 6   | -                         | COMMIT                |    
++-----+---------------------------+-----------------------+--------------
+| 1   | BEGIN                     | -                     |
+| 2   | INSERT INTO t1 VALUES (1) | -                     |
+| 3   | DELETE FROM t1            | -                     |
+| 3   | COMMIT                    | -                     |
+| 4   | -                         | BEGIN                 |
+| 5   | -                         | DELETE FROM t1        |
+| 6   | -                         | COMMIT                |    
++-----+---------------------------+-----------------------+--------------
+| 1   | BEGIN                     | -                     |
+| 2   | INSERT INTO t1 VALUES (1) | -                     |
+| 3   | -                         | BEGIN                 |
+| 4   | -                         | DELETE FROM t1        |
+| 5   | COMMIT                    | -                     |
+| 6   | -                         | COMMIT                |    
++-----+---------------------------+-----------------------+--------------
+| 1   | BEGIN                     | -                     |
+| 2   | INSERT INTO t1 VALUES (1) | -                     |
+| 3   | -                         | BEGIN                 |
+| 4   | -                         | DELETE FROM t1        |
+| 5   | COMMIT                    | -                     |
+| 6   | -                         | COMMIT                |    
+```
+
 生成新tuple
 ```python
 tuple
@@ -110,32 +160,52 @@ tuple
     xmax = xid
 ```
 
-更新Tuple
-```python
-new-tuple
-    xmin = xid
-```
+- xmin：写入tup的事务
+- xmax：删除tup的事务
+- cid：如果xmax无效，则表示写入tup的SQL语句在事务中的编号。否则，则表示删除tup的SQL语句在事务中的编号。
 
-一个tuple有以下几种状态：
+检查tup可见性，主要从3个方便判断：
+- 检查xmin，即检查写入tup的事务的状态。xmin事务共有3种状态：已提交、未提交、已回滚或已故障
+- 检查xmax，即检查删除tup的事务的状态。只有xmin事务已提交，才需进一步检查xmax事务。xmax事务共有3种状态：已提交、未提交、已回滚或已故障或不存在（即未有事务尝试删除过）
+- 检查cid，即检查同一事务内修改tup的顺序。只有xmin或xmax事务是本事务，才需要检查cid
+
+所以，检查tup可见性的大致逻辑是：
+1. 先检查xmin事务的状态
+2. 如果xmin事务已提交，再检查xmax事务状态
+3. 其中，如果xmin事务或xmax事务是本事务，需额外检查cid
+
+检查tup可见性的详细逻辑如下：
 - xmin
-    - 本事务 me
-    - 其他事务 other
-        - 未提交 uncommit # 遍历所有当前进程
-        - 已提交 commit   # 遍历commit log
-        - 已回滚 rollback 
-- xmax
     - 本事务
-    - 其他事务
-        未提交
-        已提交
-        已回滚
-- cid
-    - 本事务
-        - cid小
-        - cid大
-    - 其他事务
+        - 已提交
+            - cid小于本command
+            - cid大于本command [HeapTupleInvisible]
+        - 未提交
+        - 已回滚或故障
+    - 非本事务
+        - 已提交
+            - xmax
+                - 本事务
+                    - cid小于本command
+                    - cid大于本command
+                - 非本事务
+                    - 已提交
+                    - 未提交
+                    - 已回滚或已故障或不存在
+        - 未提交 [HeapTupleInvisible]
+        - 已回滚或故障
 
+判断事务的3种状态的方法：
+- 判断事务未提交：
+- 判断事务已提交：
+- 判断事务已回滚或已故障：
+
+上述描述中，如果每次操作tup时，都需检查commit log来判断事务是否已提交，开销较大。如果操作tup的事务已提交，可以在tup中设置一些标记，下次再检查时，根据标记即可获取事务状态，无需频繁访问commit log。
+
+以下是我整理的简洁版的tup可见性判断：
 ```python
+# 阶段一、获取tup状态，先检查tup是否被成功修改
+# 如果tup未被成功修改，阶段二再检查本事务是否可见tup
 if tup.xmin = my.xid:
     if tup.cid >= my.cid:
         return HeapTupleInvisible
@@ -161,11 +231,33 @@ else:
                 return HeapTupleBeingUpdated
             else:
                 if tup.xmax.stat = rollback:
-                    return HeapTupleMayBeUpdated
-                else: # tup.xmax.start = commit
-                    return HeapTupleUpdated
+                    return HeapTupleMayBeUpdated # tup未被修改，无事务修改tup，或修改的事务已回滚
+                else: # tup.xmax.stat = commit
+                    return HeapTupleUpdated # tup被修改，修改事务已提交
     else tup.xmin.stat = rollback:
         return HeapTupleInvisible
+
+# 阶段二，根据tup状态，如果tup未被成功修改，
+if tup.stat = HeapTupleInvisible:
+    error
+elif tup.stat = HeapTupleBeingUpdated:
+    if tup.xmax != my.xid:
+        XactLockTableWait 等锁释放
+        if tup.infomask = HEAP_XMAX_INVALID:
+            tup.stat = HeapTupleMayBeUpdated
+        else:
+            tup.stat = HeapTupleUpdated
+    else:
+        if tup.infomask = HEAP_XMAX_INVALID:
+            tup.stat = HeapTupleMayBeUpdated
+        else:
+            tup.stat = HeapTupleUpdated
+if tup.stat = HeapTupleMayBeUpdated:
+    if ! check visibility tup, snapshot:
+        tup.stat = HeapTupleUpdated
+if tup.stat != HeapTupleMayBeUpdated:
+    return
+tup.cmax = my.xid
 ```
 
 检查tuple可见性的几种返回值 HTSU_Result
@@ -182,6 +274,7 @@ else:
 - HeapTupleWouldBlock
     - 如果对元组加锁，当前事务可能会被阻塞
 
+以下是完整版的tup可见性判断：
 ```python
 HeapTupleSatisfiesUpdate
     # 阶段一、检查Tuple的写入事务
@@ -200,7 +293,6 @@ HeapTupleSatisfiesUpdate
             tuple->infomask & HEAP_XMIN_INVALID  # 未找到Tuple的写入事务的提交日志
             return HeapTupleInvisible
     else:   # Tuple的写入事务 已提交
-
         # 阶段二、检查Tuple的删除事务
         if tuple->t_infomask & HEAP_XMAX_INVALID: # 初始状态，并没有事务尝试删除Tuple，INSERT时，t_infomask初始值为HEAP_XMAX_INVALID
             return HeapTupleMayBeUpdated
@@ -225,10 +317,6 @@ HeapTupleSatisfiesUpdate
                     else:   # Tuple的删除事务，已提交
                         tuple->infomask & HEAP_XMAX_COMMITTED
                         return HeapTupleUpdated
-```
-
-```python
-    if tup.infomask & XMIN_COMMITTED:
 ```
 
 # 2 PostgreSQL事务的实现
