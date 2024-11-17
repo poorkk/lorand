@@ -7229,7 +7229,7 @@ object-assign
                     }, {
                         key: 'handleImageErrored',
                         value: function handleImageErrored(obj) {
-                            obj.target.src = "https://cdn.jsdelivr.net/npm/gitalk@1/src/assets/icon/github.svg";
+                            obj.target.src = "https://unpkg.zhimg.com/gitalk@1/src/assets/icon/github.svg";
                         }
                     }, {
                         key: 'header',
@@ -12091,7 +12091,7 @@ object-assign
                     }, {
                         key: 'handleImageErrored',
                         value: function handleImageErrored(obj) {
-                            obj.target.src = "https://cdn.jsdelivr.net/npm/gitalk@1/src/assets/icon/github.svg";
+                            obj.target.src = "https://unpkg.zhimg.com/gitalk@1/src/assets/icon/github.svg";
                         }
                     }, {
                         key: 'render',

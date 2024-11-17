@@ -211,7 +211,7 @@ mathjax:
 # Mermaid 支持
 mermaid:
   on: false
-  cdn: //cdn.jsdelivr.net/npm/mermaid@8.4.2/dist/mermaid.min.js
+  cdn: //unpkg.zhimg.com/mermaid@8.4.2/dist/mermaid.min.js
   #cdn: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.3.1/mermaid.min.js
   options: # 更多配置信息可以参考 https://mermaidjs.github.io/#/mermaidAPI
     theme: 'default'
@@ -287,15 +287,15 @@ utteranc:
 
 ##########CND设置#############
 CDN:
-  jquery: //cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js
-  jquery_cookie: //cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js
-  highlight: //cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js
-  pjax: //cdn.jsdelivr.net/npm/jquery-pjax@2.0.1/jquery.pjax.min.js
-  animate: //cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css
-  nprogres_js: //cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js
-  mathjax: //cdn.jsdelivr.net/npm/mathjax@2.7.8/unpacked/MathJax.js?config=TeX-MML-AM_CHTML
-  photoswipe_js: //cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js
-  photoswipe_ui_js: //cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js
-  photoswipe_css: //cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css
-  photoswipe_skin_css: //cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css
+  jquery: //unpkg.zhimg.com/jquery@3.5.1/dist/jquery.min.js
+  jquery_cookie: //unpkg.zhimg.com/jquery.cookie@1.4.1/jquery.cookie.min.js
+  highlight: //unpkg.zhimg.com/highlightjs@9.16.2/highlight.pack.min.js
+  pjax: //unpkg.zhimg.com/jquery-pjax@2.0.1/jquery.pjax.min.js
+  animate: //unpkg.zhimg.com/animate.css@4.1.0/animate.min.css
+  nprogres_js: //unpkg.zhimg.com/nprogress@0.2.0/nprogress.min.js
+  mathjax: //unpkg.zhimg.com/mathjax@2.7.8/unpacked/MathJax.js?config=TeX-MML-AM_CHTML
+  photoswipe_js: //unpkg.zhimg.com/photoswipe@4.1.3/dist/photoswipe.min.js
+  photoswipe_ui_js: //unpkg.zhimg.com/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js
+  photoswipe_css: //unpkg.zhimg.com/photoswipe@4.1.3/dist/photoswipe.min.css
+  photoswipe_skin_css: //unpkg.zhimg.com/photoswipe@4.1.3/dist/default-skin/default-skin.min.css
 ##############################
