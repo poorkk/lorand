@@ -1,10 +1,10 @@
 ---
 title: 安全 netfilter与iptables
-date: 2022-09-25 16:03:37
+date: 2023-01-01 16:03:37
 categories:
-    - 网络安全
+    - 安全
 tags:
-    - 网络安全
+    - 安全
 ---
 
 # 1 netfilter
