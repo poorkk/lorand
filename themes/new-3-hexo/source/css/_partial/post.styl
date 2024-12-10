@@ -1,7 +1,7 @@
 #post
   height 100%
   font-weight: 400;
-  font-size: 16px;
+  font-size: 17px;
   line-height 1.75
   background #f4f5f5
   overflow-x hidden
@@ -171,12 +171,12 @@
           display inline-block
       blockquote
         color: #666;
-        padding: 1px 23px;
-        margin: 22px 0;
+        padding: 4px 4px;
+        margin: 3px 15px;
         border-left: 4px solid #cbcbcb;
         background-color: #f8f8f8;
         p
-          margin: 10px 0;
+          margin: 3px 10px;
       strong
         font-weight 700
       p
@@ -185,16 +185,16 @@
         margin-bottom: 1px;
       h1
         font-size 19px
-        margin-top: 2px
+        margin-top: 15px
         margin-bottom: 2px
       h2
-        margin-top: 2px
-        margin-bottom: 2px
+        margin-top: 5px
+        margin-bottom: 1px
         font-size 16px
       h3
-        font-size 14px
-        margin-bottom: 2px
-        margin-top: 2px
+        font-size 15px
+        margin-bottom: 1px
+        margin-top: 1px
       .inner-toc
         border: #e2dede solid 1px;
         h2
@@ -211,16 +211,17 @@
         margin-bottom 2px
         margin-left -20px
       table
+        margin-left: 20px;
         padding 0
         border-spacing 0
         border-collapse collapse
+        background-color #c0c0c0
         tr
           border-top 1px solid #cccccc
-          background-color white
           margin 0
           padding 0
           &:nth-child(2n)
-            background-color #f8f8f8
+            background-color #cccccc
           th
             font-weight bold
             border 1px solid #cccccc
@@ -235,6 +236,7 @@
             text-align left
             margin 0
             padding 6px 13px
+            background-color #fafafa
             &:first-child, &:last-child
               margin-top: 0
               margin-bottom: 0
@@ -265,10 +267,11 @@
       pre
         position relative
         front-size 12px
+        margin-top: 1px
         .code-embed
           position absolute
           font-size 12px
-          top 3px
+          margin-top: 1px
           right 15px
           color hsla(0,0%,54.9%,.8)
           &-copy
@@ -276,10 +279,13 @@
             padding-left 10px
 
         & > code
-          font-size: 12px;
+          margin-left: 20px;
+          margin-top: 1px
+          margin-bottom: 1px
+          font-size: 14px;
           border-radius 3px
           line-height: 120%
-          padding: 18px 12px 12px;
+          padding: 10px 10px 10px;
           font-family: Menlo,Monaco,Consolas,Courier New,monospace;
           /* 滚动条 */
           &::-webkit-scrollbar-thumb:horizontal  /*水平滚动条的样式*/

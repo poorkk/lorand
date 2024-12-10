@@ -15,7 +15,7 @@ post:
   copyright1: "\"署名-非商用-相同方式共享 4.0\""
   copyright2: "转载请保留原文链接及作者。"
 donation:
-  button: "赏"
-  headline: "喜欢就点赞,疼爱就打赏"
-  alipay: "支付宝"
-  weixin: "微信"
+  button: "微信"
+  headline: "如需添加微信，请说明来源"
+  alipay: "好友"
+  weixin: "打赏"

@@ -416,24 +416,6 @@ function inputChange() {
     }
 }
 
-/*隐藏/显示 文章列表*/
-$(".full-toc .full,.semicircle").click(function (e) {
-    isFullScreen = !isFullScreen
-    if ($fullBtn.children().hasClass("min")) {
-        $fullBtn.children().removeClass("min").addClass("max");
-        $(".nav, .hide-list").addClass("fullscreen");
-        content.delay(200).queue(function () {
-            $fullBtn.addClass('fullscreen').dequeue();
-        });
-    } else {
-        $fullBtn.children().removeClass("max").addClass("min");
-        $(".nav, .hide-list").removeClass("fullscreen");
-        content.delay(300).queue(function () {
-            $fullBtn.removeClass('fullscreen').dequeue();
-        });
-    }
-});
-
 container.hover(function () {
     $(".semicircle").css("margin-left", "-43px");
 },function () {

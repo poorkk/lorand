@@ -55,8 +55,9 @@
         <% } %>
       <% } else { %>
         <%- post.content %>
+        <h2>&nbsp</h2>
       <% } %>
-       <% if(theme.article_txt){%><hr><span style="font-style: italic;color: gray;"> <%=theme.article_txt%> </span><%}%>
+       <% if(theme.article_txt){%><hr><span class="post-tail" style="color: #6D0EAA; text-align: center"><p><%=theme.article_txt%> </p> </span><%}%>
     </div>
 </article>
 

@@ -88,7 +88,7 @@ menu:
       type: 3  # 跳转类型 3：打开新的tab页
 
 # 文末声明
-article_txt: 感谢阅读！ 如有错误，欢迎指正！ 留言：18213718616 (短信/微信)
+article_txt: 感谢阅读，如有错误，欢迎指正，电话微信 18213718616
 
 bottom_text: ©2022-2023 lorand
 # 自定义页面最下方的站点版权信息
@@ -161,7 +161,7 @@ blockquote: github
 # bracket : 类似于左右两个大括号的样式
 
 # table 的样式
-table: green
+table:
 # 为空时类似github的table样式
 # green 绿色样式
 # green_title 头部为青色的table样式
@@ -233,7 +233,7 @@ friends:
 
 ##########评论设置#############
 comment:
-  on: true
+  on: false
   type: gitalk  # 评论系统：gitalk、disqus、gitment、utteranc、livere,注意：使用时，在下方对应位置进行配置
   comment_count: true  # 文章标题下方显示评论数 目前仅支持 gitalk 和 disqus
   ## 使用说明 https://yelog.org//2020/05/23/3-hexo-comment/
