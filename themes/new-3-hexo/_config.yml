@@ -188,7 +188,7 @@ highlight:
   on: true # true开启代码高亮，开启需要关闭博客 _config.yml 中的 highlight
   lineNum: false # true显示行号
   copy: true # 复制功能
-  theme: atom-light
+  theme: atom-dark
 # 代码高亮主题,效果可以查看 https://highlightjs.org/static/demo/
 # 支持主题：
 # sublime : 参考sublime的高亮主题
@@ -210,7 +210,7 @@ highlight:
 
 # MathJax 数学公式支持
 mathjax:
-  on: true #是否启用
+  on: false #是否启用
   per_page: false # 若只渲染单个页面，此选项设为false，页面内加入 mathjax: true
 
 # Mermaid 支持
@@ -233,7 +233,7 @@ friends:
 
 ##########评论设置#############
 comment:
-  on: false
+  on: true
   type: gitalk  # 评论系统：gitalk、disqus、gitment、utteranc、livere,注意：使用时，在下方对应位置进行配置
   comment_count: true  # 文章标题下方显示评论数 目前仅支持 gitalk 和 disqus
   ## 使用说明 https://yelog.org//2020/05/23/3-hexo-comment/

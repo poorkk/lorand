@@ -144,6 +144,11 @@ $(".nav-right nav a").mouseenter(function (e) {
 $(".nav-right nav a").mouseleave(function (e) {
     $(this).removeClass("hover");
 });
+$(".nav-right nav a").on("click", function (e) {
+    $(".nav-right nav a.active").removeClass("active");
+    $(this).addClass("active");
+});
+
 
 /*快捷键/组合键*/
 var publickey = {"shift": false, "ctrl": false, "alt": false, "last": 0};
