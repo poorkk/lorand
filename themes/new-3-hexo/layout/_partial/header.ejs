@@ -19,6 +19,7 @@
 <%
 // 对文章进行排序
 site.posts.data.sort(function(a, b) {
+  return String(a.title).localeCompare(String(b.title), 'zh')
   if(a.top && b.top) { // 两篇文章top都有定义
     if(a.top == b.top) return b.date - a.date; // 若top值一样则按照文章日期降序排
     else return b.top - a.top; // 否则按照top值降序排
