@@ -594,7 +594,7 @@ $(function () {
     }
     if ($(window).width() > 414) {
         /*设置文章列表title宽度*/
-        $('.nav-right>nav>a>.post-title').css('width',$('.nav-right>nav>a').width() - $('.nav-right>nav>a>.post-date:first').width() - 40)
+        $('.nav-right>nav>a>.post-title').css('width',$('.nav-right>nav>a').width() - 40)
     }
 
     /*友情链接*/

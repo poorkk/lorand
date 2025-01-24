@@ -1,13 +1,13 @@
 right-top-height = 45px
 .nav-right
-  width 420px
+  width 320px
   height 100%
   background-color white
   border-right 1px solid #e5e8ec
   box-shadow inset -15px 0 1px -15px #222 /* sk */
   overflow hidden
   float left
-  left 30px
+  left 1px
   position relative
   -webkit-user-select none
   -moz-user-select none
@@ -26,17 +26,17 @@ right-top-height = 45px
       background-color #e4e5e5
       top: 0
       width: 100%
-      font-size 15px
+      font-size 12px
       #default-panel, #outline-panel
         text-align center
         height right-top-height
         .right-title
           color #9af149
           position absolute
-          right 200px
+          right 120px
           height right-top-height
           line-height right-top-height
-          font-size 18px
+          font-size 12px
         .iconfont
           position absolute
           top 50%
@@ -47,12 +47,12 @@ right-top-height = 45px
             left 15px
             &.active
               color #007fff
-          &.icon-file-tree
-            right 180px
+          &.icon-file-tree /* 切换视图 */
+            right 150px
             color #e385f9
             font-size 18px
           &.icon-list
-            right 180px
+            right 150px  /* 切换视图 */
             color #e385f9
             font-size 18px
       #search-panel
@@ -265,7 +265,7 @@ right-top-height = 45px
           z-index 1
           /* font-size 18px */
           /* color #309E85  左箭头 */
-          font-size 12 px
+          font-size 14 px
           color #a0a0a0
         &#top:before
           content "\f08d"
@@ -276,14 +276,11 @@ right-top-height = 45px
           background-color #cbedef
           color #800000
         .post-title
-          width: -webkit-calc(100% - 155px)
-          width: -moz-calc(100% - 155px)
-          width: calc(100% - 155px)
           float left
           clear both
           margin 5px 0
           padding-left 20px /* sk: 32->20 */
-          font-size 16px
+          font-size 14px
           line-height 22px
           white-space nowrap
           text-decoration none
@@ -294,13 +291,6 @@ right-top-height = 45px
           .search-keyword
             color red
             font-style normal
-        .post-date
-          /* font-size 15px */
-          font-size 5px
-          margin 8px 0
-          padding-right 3px
-          color #9aa4af
-          float right
   .friends-area
     height 100%
     margin-left -421px
@@ -313,7 +303,7 @@ right-top-height = 45px
       text-align center
       vertical-align middle
       display table-cell
-      width 420px
+      width 320px
       font-size 18px
       position relative
       .icon-left

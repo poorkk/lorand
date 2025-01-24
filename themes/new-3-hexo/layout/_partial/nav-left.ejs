@@ -59,7 +59,7 @@ if (theme.category && theme.category.sub) {
     <li>
         <div class="all active" data-rel="<%= __('all_articles') %>"><%= __('all_articles') %>
             <% if (theme.category && theme.category.num) { %>
-                <small>(<%= site.posts.length %>)</small>
+                <small>[<%= site.posts.length %>]</small>
             <% } %>
         </div>
     </li>
@@ -71,7 +71,7 @@ if (theme.category && theme.category.sub) {
                         <% if (childCategory[category._id]) { %><i class="fold iconfont icon-right"></i>
                         <% } %>
                         <%= category.name %>
-                        <% if (theme.category && theme.category.num) { %><small>(<%= category.posts.length %>)</small>
+                        <% if (theme.category && theme.category.num) { %><small>[<%= category.posts.length %>]</small>
                         <% } %>
                     </div>
                     <% if (childCategory[category._id]) { %>
@@ -83,7 +83,7 @@ if (theme.category && theme.category.sub) {
                                         <% } %>
                                         <%= child.name %>
                                         <% if (theme.category && theme.category.num) { %>
-                                            <small>(<%= child.posts.length %>)</small>
+                                            <small>[<%= child.posts.length %>[</small>
                                         <% } %>
                                     </div>
                                     <% if (childCategory[child._id]) { %>
@@ -96,7 +96,7 @@ if (theme.category && theme.category.sub) {
                                                         <% } %>
                                                         <%= child2.name %>
                                                         <% if (theme.category && theme.category.num) { %>
-                                                            <small>(<%= child2.posts.length %>)</small>
+                                                            <small>[<%= child2.posts.length %>]</small>
                                                         <% } %>
                                                     </div>
                                                 </li>
