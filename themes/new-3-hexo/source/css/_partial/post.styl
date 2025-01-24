@@ -10,7 +10,6 @@
   font-family -apple-system,system-ui,BlinkMacSystemFont,Helvetica Neue,PingFang SC,Hiragino Sans GB,Microsoft YaHei,Arial,sans-serif
   color #2f2f2f
   margin-left 1px
-  left -100px
 
   & ::selection
     color white
@@ -197,6 +196,11 @@
         font-size 15px
         margin-bottom: 1px
         margin-top: 1px
+      li
+        font-size 13px
+      p
+        margin-left: 8px;
+        font-size: 13px
       .inner-toc
         border: #e2dede solid 1px;
         h2
@@ -229,7 +233,8 @@
             border 1px solid #cccccc
             text-align left
             margin 0
-            padding 6px 13px
+            padding 2px 10px /* 表格头，距离上下，左右的距离 */
+            font-size 13px
             &:first-child, &:last-child
               margin-top 0
               margin-bottom 0
@@ -237,7 +242,8 @@
             border 1px solid #ddd
             text-align left
             margin 0
-            padding 6px 13px
+            padding 2px 10px /* 表格行，距离上下，左右的距离 */
+            font-size 13px
             background-color #fafafa
             &:first-child, &:last-child
               margin-top: 0
