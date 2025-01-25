@@ -1,10 +1,10 @@
 ---
-title: 简历
+title: 各科目知识点
 date: 2022-09-25 16:03:37
 categories:
-    - 数据库
+    - 社招
 tags:
-    - postgresql
+    - 社招
 ---
 
 [toc]

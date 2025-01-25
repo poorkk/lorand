@@ -1,9 +1,9 @@
 ---
 title: openGauss 1 安装openGauss
 categories:
-    - openGauss
+    - 数据库
 tags:
-    - openGauss
+    - 数据库
 ---
 
 # 1 安装wsl
