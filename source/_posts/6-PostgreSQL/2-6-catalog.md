@@ -1,5 +1,5 @@
 ---
-title: PostgreSQL 2-5 Catalog
+title: PostgreSQL 2-6 Catalog
 date: 2022-09-25 16:25:37
 categories:
     - PostgreSQL

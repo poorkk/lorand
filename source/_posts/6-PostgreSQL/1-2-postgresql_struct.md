@@ -24,7 +24,7 @@ postgresql 采用1+n+7的进程架构，包括：
     7. log collectoer进程：
 
 进程架构图如下图所示：
-![](pg-all-process.png)
+{% asset_img pg-all-process.png %}
 
 ## 1.2 进程启动
 先启动postmaster进程，再由poastermaster启动n+7进程。

@@ -7,6 +7,10 @@ tags:
 ---
 
 # 1 Oracle 集群管理
+## 1.2 登录数据库
+```bash
+sqlplus / as sysdba
+```
 
 # 2 Oracle 语法
 ## 2.1 数据类型

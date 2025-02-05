@@ -1,5 +1,5 @@
 ---
-title: PostgreSQL 2-4 Execute
+title: PostgreSQL 2-5 Execute
 date: 2022-09-25 16:24:37
 categories:
     - PostgreSQL
@@ -9,6 +9,51 @@ tags:
 
 # 1 概述
 ## 1.1 总接口
+```python
+exec_simple_query
+    pg_parse_query # 语法解析
+    pg_analyze_and_rewrite # 语义分析 查询重写
+    pg_plan_queries # 计划生成
+    CreatePortal
+    PortalDefineQuery
+    PortalStart
+    PortalRun
+        PortalRunSelect
+            ExecutorRun # 计划执行
+                standard_ExecutorRun
+                    ExecutePlan
+                        for (;;)
+                            ExecProcNode
+                                ExecSeqScan # SELECT 计划执行
+                                    SeqNext
+                                        heap_beginscan
+                                        heap_getnext
+        PortalRunMulti # DDL执行
+            PortalRunUtility
+                ProcessUtility
+                    standard_ProcessUtility
+                        ExecDropStmt # DROP TABLE
+                        ProcessUtilitySlow
+                            DefineRelation # CREATE TABLE
+            ProcessQuery
+                ExecutorStart
+                ExecutorRun # 计划执行
+                    standard_ExecutorRun
+                        ExecutePlan
+                            for (;;)
+                                ExecProcNode
+                                    ExecModifyTable
+                                        ExecInsert # INSERT 计划执行
+                                            heap_insert
+                                        ExecUpdate # UPDATE 计划执行
+                                            heap_update
+                                        ExecDelete # DELETE 计划执行
+                                            heap_delete
+                ExecutorFinish
+                ExecutorEnd
+    PortalDrop
+```
+
 ```python
 exec_simple_query
     pg_plan_queries

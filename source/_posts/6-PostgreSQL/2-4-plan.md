@@ -1,5 +1,5 @@
 ---
-title: PostgreSQL 2-3 Plan
+title: PostgreSQL 2-4 Plan
 date: 2022-09-25 16:23:37
 categories:
     - PostgreSQL
