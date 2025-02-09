@@ -8,7 +8,62 @@ tags:
 
 https://www.tapd.cn/60475194/markdown_wikis/show/#1160475194001006330
 
-# 7 加密函数
+# 3 异常参数
+## 3.1 DES encrypt
+1. 封装函数
+    ```sql
+    CREATE OR REPLACE FUNCTION desencrypt(hex_plain VARCHAR2, hex_key VARCHAR2)
+    RETURN VARCHAR2 IS
+        cipher RAW(100);
+    BEGIN
+        dbms_obfuscation_toolkit.desencrypt(hextoraw(hex_plain), hextoraw(hex_key), encrypted_data=>cipher);
+        RETURN rawtohex(cipher);
+    END;
+    /
+    ```
+2. 函数格式
+    ```sql
+    desencrypt(plain, key, cipher);
+    ```
+    约束：
+3. 构造用例
+    | 明文长度 | 密钥长度 | 输出：密文长度 | 示例 | 结果 |
+    | -| -| -| -| -|
+    | 一、正常用例
+    | 8       | 8       | 8             | desencrypt() | abc |
+    | 16      | 8       | 16            | desencrypt() | abc |
+    | 一、明文长度异常
+    | 0       | 8       | 16            | desencrypt() | 明文不是8的倍数 |
+    | 1       | 8       | -             | desencrypt() | 明文不是8的倍数 |
+    | 7       | 8       | -             | desencrypt() | 明文不是8的倍数 |
+    | 15      | 8       | -             | desencrypt() | 明文不是8的倍数 |
+    | 二、密钥长度异常
+    | 8       | 0       | 8             | desencrypt() | 密钥长度不是8 |
+    | 8       | 1       | 8             | desencrypt() | 密钥长度不是8 |
+    | 8       | 15      | 8             | desencrypt() | 密钥长度不是8 |
+    | 8       | 16      | 8             | desencrypt() | 密钥长度不是8 |
+
+## 3.2 DES decrypt
+
+## 3.3 3DES encrypt
+1. 封装函数
+    ```sql
+    CREATE OR REPLACE FUNCTION des3encrypt(hex_plain VARCHAR2, hex_key VARCHAR2, hex_iv VARCHAR2, key_mode INT)
+    RETURN VARCHAR2 IS
+        cipher RAW(100);
+    BEGIN
+        dbms_obfuscation_toolkit.des3encrypt(input=>hextoraw(hex_plain), key=>hextoraw(hex_key), encrypted_data=>cipher, which=>key_mode, iv=>hextoraw(hex_iv));
+        RETURN rawtohex(cipher);
+    END;
+    /
+    ```
+2. 函数格式
+    ```sql
+    des3encrypt(plain, key, iv, mode, cipher);
+    ```
+3. 构造用例
+
+# 7 oracle 加密函数
 ## 7.1 DES
 - 函数格式
     ```sql
@@ -76,14 +131,38 @@ https://www.tapd.cn/60475194/markdown_wikis/show/#1160475194001006330
     ```sql
     dbms_obfuscation_toolkit.DESencrypt(plain, key, mode);
     ```
+    which的含义：
+    - 0：2密钥格式，k1 = k3
+    - 1：3密钥格式
+    - 
 - 加密函数
+    ```sql
+    CREATE OR REPLACE FUNCTION des3encrypt(hex_plain VARCHAR2, hex_key VARCHAR2, hex_iv VARCHAR2, key_mode INT)
+    RETURN VARCHAR2 IS
+        cipher RAW(100);
+    BEGIN
+        dbms_obfuscation_toolkit.des3encrypt(input=>hextoraw(hex_plain), key=>hextoraw(hex_key), encrypted_data=>cipher, which=>key_mode, iv=>hextoraw(hex_iv));
+        RETURN rawtohex(cipher);
+    END;
+    /
+
+    SELECT des3encrypt('3131313131313131', '31313131313131313131313131313131'，'31313131313131313131313131313131', 0) FROM dual;
+
+    SELECT des3encrypt('31313131313131', '31313131313131313131313131313131'，NULL, 0) FROM dual;
+
+    -- 废弃
+    SELECT rawtohex(dbms_obfuscation_toolkit.des3encrypt(hextoraw('3131313131313131'), hextoraw('31313131313131313131313131313131'), 0)) FROM dual;
+
+    SELECT dbms_obfuscation_toolkit.des3encrypt(hextoraw('3131313131313131'), hextoraw('3131313131313131'), 0) FROM dual;
+    ```
+- 其他
     - 示例1
     ```sql
     select utl_raw.cast_to_raw(dbms_obfuscation_toolkit.des3encrypt('11111111', key_string=>010199010401050110974949, which=>0)) from dual;
     -- 输出：
     E7E14DFD9E0DED3B
     ```
-- 其他
+    - 验证
     ```sql
     -- 3des
     select utl_raw.cast_to_raw(dbms_obfuscation_toolkit.des3encrypt('11111111', key_string=>010199010401050110974949, which=>0)) from dual;

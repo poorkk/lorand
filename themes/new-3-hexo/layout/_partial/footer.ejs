@@ -40,9 +40,12 @@
         });
         <%}%>
 
+        // var blog_path = $('.theme_blog_path').val();
+        // blog_path= blog_path.lastIndexOf("/") === blog_path.length-1?blog_path.slice(0, blog_path.length-1):blog_path;
         /*访问数量*/
         <%if(theme.visit_counter && theme.visit_counter.on) {%>
-        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+            $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+            // $.getScript(blog_path + 'busuanzi.pure.mini.js');
         <%}%>
 
         /*代码高亮，行号对齐*/
